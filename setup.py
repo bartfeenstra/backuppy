@@ -1,3 +1,5 @@
+"""Integrates Backuppy with Python's setuptools."""
+
 import os
 from setuptools import setup, find_packages
 
@@ -18,6 +20,9 @@ SETUP = {
     'url': "https://github.com/bartfeenstra/backuppy",
     # 'install_requires': dependencies,
     'packages': find_packages(),
+    'scripts': [
+        'bin/backup',
+    ],
 }
 
 if __name__ == '__main__':
