@@ -123,7 +123,7 @@ class Configuration:
 
         :return: str
         """
-        return self._name if self._name else self.working_directory
+        return self._name if self._name else self._configuration_file_path
 
     @property
     def working_directory(self):
