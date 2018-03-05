@@ -2,7 +2,7 @@
 
 from backuppy.discover import discover_notifier_types, discover_location_types
 from backuppy.location import FirstAvailableLocation
-from backuppy.notifier import GroupedNotifiers
+from backuppy.notifier import GroupedNotifiers, FileNotifier
 
 
 class Runner:
@@ -16,7 +16,7 @@ class Runner:
         self._configuration = configuration
 
         notifier_types = discover_notifier_types()
-        notifiers = []
+        notifiers = [FileNotifier.for_stdio()]
         for notifier_configuration in configuration.notifiers:
             if notifier_configuration.type not in notifier_types:
                 raise ValueError('`Notifier type must be one of the following: %s, but `%s` was given.' % (
@@ -38,10 +38,10 @@ class Runner:
 
     def backup(self):
         """Start a new back-up."""
-        self._notifier.notify('Initializing back-up %s' % self._configuration.name)
+        self._notifier.state('Initializing back-up %s' % self._configuration.name)
 
         if not self._target.is_available():
-            self._notifier.notify('No back-up target available.')
+            self._notifier.alert('No back-up target available.')
             return None
 
-        self._notifier.notify('Backing up %s...' % self._configuration.name)
+        self._notifier.inform('Backing up %s...' % self._configuration.name)
