@@ -1,5 +1,7 @@
 """Provide back-up locations."""
 import os
+import socket
+
 import paramiko
 from paramiko import SSHException
 
@@ -7,8 +9,8 @@ from paramiko import SSHException
 class Location:
     """Provide a backup location."""
 
-    def is_ready(self):
-        """Check if the target is ready to back up to.
+    def is_available(self):
+        """Check if the target is available.
 
         :return: bool
         """
@@ -25,12 +27,12 @@ class PathLocation(Location):
         """
         self._path = path
 
-    def is_ready(self):
-        """Check if the target is ready to back up to.
+    def is_available(self):
+        """Check if the target is available.
 
         :return: bool
         """
-        return True
+        return os.path.exists(self.path)
 
     @classmethod
     def from_configuration_data(cls, configuration, configuration_data):
@@ -46,8 +48,6 @@ class PathLocation(Location):
         path_data = configuration_data['path']
         if '/' != path_data[0]:
             path_data = '%s/%s' % (configuration.working_directory, path_data)
-        if not os.path.exists(path_data):
-            raise ValueError('`%s` does not exist.' % path_data)
         path = path_data
 
         return cls(path)
@@ -77,8 +77,8 @@ class SshLocation(Location):
         self._port = port
         self._path = path
 
-    def is_ready(self):
-        """Check if the target is ready to back up to.
+    def is_available(self):
+        """Check if the target is available.
 
         :return: bool
         """
@@ -86,6 +86,8 @@ class SshLocation(Location):
             self._connect()
             return True
         except SSHException:
+            return False
+        except socket.timeout:
             return False
 
     def _connect(self):
@@ -100,10 +102,9 @@ class SshLocation(Location):
         return client
 
     @classmethod
-    def from_configuration_data(cls, configuration, configuration_data):
+    def from_configuration_data(cls, configuration_data):
         """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
-        :param configuration: Configuration
         :param configuration_data: dict
         :return: cls
         :raise: ValueError
@@ -154,3 +155,35 @@ class SshLocation(Location):
         :return: int
         """
         return self._port
+
+
+class FirstAvailableLocation(Location):
+    """A location that decorates the first available of the given locations."""
+
+    def __init__(self, locations):
+        """Initialize a new instance.
+
+        :param locations: Iterable[Location]
+        """
+        self._locations = locations
+        self._available_location = None
+
+    def is_available(self):
+        """Check if the target is available.
+
+        :return: bool
+        """
+        return self._get_available_location() is not None
+
+    def _get_available_location(self):
+        """Get the first available location.
+
+        :return: Optional[Location]
+        """
+        if self._available_location is not None:
+            return self._available_location
+
+        for location in self._locations:
+            if location.is_available():
+                self._available_location = location
+                return location

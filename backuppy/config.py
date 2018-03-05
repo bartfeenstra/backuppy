@@ -137,9 +137,17 @@ class Configuration:
     def notifiers(self):
         """Get the notifiers.
 
-        :return: Iterable[Notifier]
+        :return: Iterable[PluginConfiguration]
         """
         return self._notifiers
+
+    @property
+    def targets(self):
+        """Get the targets.
+
+        :return: Iterable[PluginConfiguration]
+        """
+        return self._targets
 
 
 def from_json(f):
