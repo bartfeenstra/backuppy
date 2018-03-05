@@ -33,7 +33,7 @@ The following instructions can be executed in any environment, but you may want 
 
 ### Requirements
 - The generic requirements documented earlier.
-- Bash
+- Bash (you're all good if `which bash` outputs a path in your terminal)
 
 ### Building
 In any environment: `./bin/build-dev`.
