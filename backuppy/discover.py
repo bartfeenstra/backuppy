@@ -10,8 +10,9 @@ def discover_location_types():
     :return: Dict
     """
     return {
-        'path': PathLocation.from_raw,
-        'ssh': SshLocation.from_raw,
+        'path': lambda configuration, configuration_data: PathLocation.from_configuration_data(
+            configuration.working_directory, configuration_data),
+        'ssh': lambda configuration, configuration_data: SshLocation.from_configuration_data(configuration_data),
     }
 
 
@@ -21,5 +22,5 @@ def discover_notifier_types():
     :return: Dict
     """
     return {
-        'notify-send': NotifySendNotifier.from_raw,
+        'notify-send': lambda configuration, configuration_data: NotifySendNotifier(),
     }
