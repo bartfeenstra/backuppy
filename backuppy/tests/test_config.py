@@ -40,7 +40,7 @@ class ConfigurationTest(TestCase):
         source = Mock(PluginConfiguration)
         target = Mock(PluginConfiguration)
         sut = Configuration(configuration_file_path, source, [target])
-        self.assertEquals(sut.name, CONFIGURATION_PATH)
+        self.assertEquals(sut.name, configuration_file_path)
 
     def test_notifiers(self):
         configuration_file_path = '%s/backuppy.json' % CONFIGURATION_PATH
