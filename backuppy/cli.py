@@ -2,6 +2,7 @@
 import argparse
 
 from backuppy.config import from_json
+from backuppy.runner import Runner
 
 
 def main(args):
@@ -13,6 +14,5 @@ def main(args):
     configuration_file_path = cli_args['configuration']
     with open(configuration_file_path) as f:
         configuration = from_json(f)
-        for notifier in configuration.notifiers:
-            notifier.notify('Initializing backup %s' % configuration.name)
-        # @todo Finish this.
+        runner = Runner(configuration)
+        runner.backup()

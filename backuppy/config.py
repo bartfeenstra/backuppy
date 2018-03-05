@@ -1,10 +1,35 @@
 """Provides configuration components."""
 import json
-
 import os
 
-from backuppy.discover import discover_notifier_types, discover_location_types
-from backuppy.location import Location
+
+class PluginConfiguration:
+    """Defines a plugin and its configuration."""
+
+    def __init__(self, plugin_type, configuration_data):
+        """Initialize a new instance.
+
+        :param plugin_type: str
+        :param configuration_data: Dict
+        """
+        self._type = plugin_type
+        self._configuration_data = configuration_data
+
+    @property
+    def type(self):
+        """Get the plugin type.
+
+        :return: str
+        """
+        return self._type
+
+    @property
+    def configuration_data(self):
+        """Get the plugin's configuration data.
+
+        :return: Dict
+        """
+        return self._configuration_data
 
 
 class Configuration:
@@ -14,25 +39,30 @@ class Configuration:
         """Initialize a new instance.
 
         :param configuration_file_path: str
-        :param source: Location
-        :param targets: Iterable[Location]
+        :param source: PluginConfiguration
+        :param targets: Iterable[PluginConfiguration]
         :param verbose: bool
-        :param notifiers: Iterable[Notifier]
+        :param notifiers: Iterable[PluginConfiguration]
         """
-        assert isinstance(source, Location)
+        assert isinstance(source, PluginConfiguration)
         self._source = source
         assert len(targets) > 0
         for target in targets:
-            assert isinstance(target, Location)
+            assert isinstance(target, PluginConfiguration)
         self._targets = targets
         self._verbose = verbose
-        self._notifiers = notifiers if notifiers is not None else []
+        if notifiers is not None:
+            for notifier in notifiers:
+                assert isinstance(notifier, PluginConfiguration)
+            self._notifiers = notifiers
+        else:
+            self._notifiers = []
         assert os.path.exists(configuration_file_path) and os.path.isfile(configuration_file_path)
         self._configuration_file_path = configuration_file_path
         self._name = name
 
     @classmethod
-    def from_raw(cls, configuration_file_path, data):
+    def from_configuration_data(cls, configuration_file_path, data):
         """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
         :param configuration_file_path: str
@@ -41,9 +71,6 @@ class Configuration:
         :raise: ValueError
         """
         kwargs = {}
-
-        location_types = discover_location_types()
-        notifier_types = discover_notifier_types()
 
         if 'verbose' in data:
             if not isinstance(data['verbose'], bool):
@@ -54,9 +81,7 @@ class Configuration:
             raise ValueError('`source` is required.')
         if 'type' not in data['source']:
             raise ValueError('`source[type]` is required.')
-        if data['source']['type'] not in location_types:
-            raise ValueError('`source[type] must be one of the following: %s' % ', '.join(location_types.keys()))
-        source = location_types[data['source']['type']](configuration_file_path, data['source'])
+        source = PluginConfiguration(data['source']['type'], data['source'])
 
         targets = []
         if 'targets' not in data:
@@ -64,18 +89,14 @@ class Configuration:
         for target_data in data['targets']:
             if 'type' not in target_data:
                 raise ValueError('`targets[][type]` is required.')
-            if target_data['type'] not in location_types:
-                raise ValueError('`targets[][type] must be one of the following: %s' % ', '.join(location_types.keys()))
-            targets.append(location_types[target_data['type']](configuration_file_path, target_data))
+            targets.append(PluginConfiguration(target_data['type'], target_data))
 
         notifiers = []
         if 'notifications' in data:
             for notifier_data in data['notifications']:
                 if 'type' not in notifier_data:
                     raise ValueError('`notifiers[][type]` is required.')
-                if notifier_data['type'] not in notifier_types:
-                    raise ValueError('`notifiers[][type] must be one of the following: %s' % ', '.join(notifier_types.keys()))
-                notifiers.append(notifier_types[notifier_data['type']](configuration_file_path, notifier_data))
+                notifiers.append(PluginConfiguration(notifier_data['type'], notifier_data))
         kwargs['notifiers'] = notifiers
 
         return cls(configuration_file_path, source, targets, **kwargs)
@@ -127,4 +148,4 @@ def from_json(f):
     :param f: File
     :return: Configuration
     """
-    return Configuration.from_raw(f.name, json.load(f))
+    return Configuration.from_configuration_data(f.name, json.load(f))
