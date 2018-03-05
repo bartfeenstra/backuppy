@@ -8,3 +8,16 @@ Backuppy back-ups and restores your data using Rsync, allowing different routes 
 ## Requirements
 - Python 2.7+
 - Bash
+
+## Usage
+```bash
+$ backuppy --help
+usage: backuppy [-h] -c CONFIGURATION
+
+Backs up your data.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIGURATION, --configuration CONFIGURATION
+                        The path to the back-up configuration file.
+```
