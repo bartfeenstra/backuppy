@@ -21,7 +21,7 @@ SETUP = {
     # 'install_requires': dependencies,
     'packages': find_packages(),
     'scripts': [
-        'bin/backup',
+        'bin/backuppy',
     ],
 }
 
