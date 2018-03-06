@@ -27,7 +27,7 @@ optional arguments:
 ```
 
 ### Configuration file
-Configuration files are written in JSON, and can be anywhere, under any name.
+Configuration files are written in JSON, and can be stored anywhere, under any name.
 [View example](./backuppy/tests/resources/configuration/backuppy.json).
 
 ## Development
