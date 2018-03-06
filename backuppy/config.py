@@ -46,7 +46,8 @@ class Configuration:
         """
         assert isinstance(source, PluginConfiguration)
         self._source = source
-        assert len(targets) > 0
+        if not targets:
+            raise ValueError('At least one target must be given.')
         for target in targets:
             assert isinstance(target, PluginConfiguration)
         self._targets = targets
