@@ -1,4 +1,5 @@
 """Code to run back-ups."""
+import subprocess
 
 
 def backup(configuration, notifier, source, target):
@@ -13,10 +14,22 @@ def backup(configuration, notifier, source, target):
 
     if not source.is_available():
         notifier.alert('No back-up source available.')
-        return None
+        return False
 
     if not target.is_available():
         notifier.alert('No back-up target available.')
-        return None
+        return False
 
     notifier.inform('Backing up %s...' % configuration.name)
+
+    args = ['rsync', '-ar', '--numeric-ids']
+    if configuration.verbose:
+        args.append('--verbose')
+        args.append('--progress')
+    args.append(source.to_rsync())
+    args.append(target.to_rsync())
+    subprocess.call(args)
+
+    notifier.confirm('Back-up %s complete.' % configuration.name)
+
+    return True
