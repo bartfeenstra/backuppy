@@ -86,40 +86,40 @@ class NotifySendNotifier(Notifier):
     See https://linux.die.net/man/2/send.
     """
 
-    def _notify(self, message):
+    def _notify(self, message, urgency):
         """Send a notification.
 
         :param message: str
         """
-        subprocess.call(('notify-send', "'%s'" % message))
+        subprocess.call(('notify-send', '-c', 'backuppy', '-u', urgency, message))
 
     def state(self, message):
         """Send a notification that may be ignored.
 
         :param message: str
         """
-        self._notify(message)
+        self._notify(message, 'low')
 
     def inform(self, message):
         """Send an informative notification.
 
         :param message: str
         """
-        self._notify(message)
+        self._notify(message, 'normal')
 
     def confirm(self, message):
         """Send a confirmation/success notification.
 
         :param message: str
         """
-        self._notify(message)
+        self._notify(message, 'normal')
 
     def alert(self, message):
         """Send an error notification.
 
         :param message: str
         """
-        self._notify(message)
+        self._notify(message, 'critical')
 
 
 class FileNotifier(Notifier):
