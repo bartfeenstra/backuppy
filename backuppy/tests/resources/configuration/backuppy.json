@@ -4,6 +4,14 @@
   "notifications": [
     {
       "type": "notify-send"
+    },
+    {
+      "type": "command",
+      "state": ["echo", "{message}"],
+      "inform": ["echo", "{message}"],
+      "confirm": ["echo", "{message}"],
+      "alert": ["echo", "{message}"],
+      "fallback": ["echo", "{message}"]
     }
   ],
   "source": {

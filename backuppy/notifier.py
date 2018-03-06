@@ -88,46 +88,95 @@ class GroupedNotifiers(Notifier):
             notifier.alert(message)
 
 
-class NotifySendNotifier(Notifier):
-    """Send notifications using the Linux notify-send utility.
+class CommandNotifier(Notifier):
+    """Send notifications as shell commands using a subprocess."""
 
-    See https://linux.die.net/man/2/send.
-    """
+    def __init__(self, state_args=None, inform_args=None, confirm_args=None, alert_args=None, fallback_args=None):
+        """Initialize a new instance.
 
-    def _notify(self, message, urgency):
+        :param state_args: Optional[Iterable[str]]
+        :param inform_args: Optional[Iterable[str]]
+        :param confirm_args: Optional[Iterable[str]]
+        :param alert_args: Optional[Iterable[str]]
+        :param fallback_args: Optional[Iterable[str]]
+        """
+        if None in [state_args, inform_args, confirm_args, alert_args] and fallback_args is None:
+            raise ValueError('fallback_args must be given if one or more of the other arguments are omitted.')
+        self._state_args = state_args
+        self._inform_args = inform_args
+        self._confirm_args = confirm_args
+        self._alert_args = alert_args
+        self._fallback_args = fallback_args
+
+    @classmethod
+    def from_configuration_data(cls, configuration_data):
+        """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+        :param configuration_data: dict
+        :return: cls
+        :raise: ValueError
+        """
+        state_args = configuration_data['state'] if 'state' in configuration_data else None
+        inform_args = configuration_data['inform'] if 'inform' in configuration_data else None
+        confirm_args = configuration_data['confirm'] if 'confirm' in configuration_data else None
+        alert_args = configuration_data['alert'] if 'alert' in configuration_data else None
+        fallback_args = configuration_data['fallback'] if 'fallback' in configuration_data else None
+        if None in [state_args, inform_args, confirm_args, alert_args] and fallback_args is None:
+            raise ValueError('`fallback` must be given if one or more of the other arguments are omitted.')
+
+        return cls(state_args, inform_args, confirm_args, alert_args, fallback_args)
+
+    def _call(self, args, message):
         """Send a notification.
 
         :param message: str
         """
-        subprocess.call(('notify-send', '-c', 'backuppy', '-u', urgency, message))
+        if args is None:
+            args = self._fallback_args
+        args = map(lambda x: x.replace('{message}', message), args)
+        # Convert to a list so we can easily assert invocations.
+        subprocess.call(list(args))
 
     def state(self, message):
         """Send a notification that may be ignored.
 
         :param message: str
         """
-        self._notify(message, 'low')
+        self._call(self._state_args, message)
 
     def inform(self, message):
         """Send an informative notification.
 
         :param message: str
         """
-        self._notify(message, 'normal')
+        self._call(self._inform_args, message)
 
     def confirm(self, message):
         """Send a confirmation/success notification.
 
         :param message: str
         """
-        self._notify(message, 'normal')
+        self._call(self._confirm_args, message)
 
     def alert(self, message):
         """Send an error notification.
 
         :param message: str
         """
-        self._notify(message, 'critical')
+        self._call(self._alert_args, message)
+
+
+class NotifySendNotifier(CommandNotifier):
+    """Send notifications using the Linux notify-send utility.
+
+    See https://linux.die.net/man/2/send.
+    """
+
+    def __init__(self):
+        """Initialize a new instance."""
+        args = ['notify-send', '-c', 'backuppy', '-u']
+        CommandNotifier.__init__(self, args + ['low', '{message}'], args + ['normal', '{message}'],
+                                 args + ['normal', '{message}'], args + ['critical', '{message}'])
 
 
 class FileNotifier(Notifier):
