@@ -20,11 +20,13 @@ class Location:
 class PathLocation(Location):
     """Provide a local, path-based backup location."""
 
-    def __init__(self, path):
+    def __init__(self, notifier, path):
         """Initialize a new instance.
 
+        :param notifier: Notifier
         :param path: str
         """
+        self._notifier = notifier
         self._path = path
 
     def is_available(self):
@@ -32,13 +34,15 @@ class PathLocation(Location):
 
         :return: bool
         """
-        return os.path.exists(self.path)
+        if os.path.exists(self.path):
+            return True
+        self._notifier.alert('Path `%s` does not exist.' % self._path)
 
     @classmethod
-    def from_configuration_data(cls, configuration, configuration_data):
+    def from_configuration_data(cls, notifier, working_directory, configuration_data):
         """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
-        :param configuration: Configuration
+        :param working_directory: str
         :param configuration_data: dict
         :return: cls
         :raise: ValueError
@@ -47,10 +51,10 @@ class PathLocation(Location):
             raise ValueError('`path` is required.')
         path_data = configuration_data['path']
         if '/' != path_data[0]:
-            path_data = '%s/%s' % (configuration.working_directory, path_data)
+            path_data = '%s/%s' % (working_directory, path_data)
         path = path_data
 
-        return cls(path)
+        return cls(notifier, path)
 
     @property
     def path(self):
@@ -64,7 +68,7 @@ class PathLocation(Location):
 class SshLocation(Location):
     """Provide a location over SSH."""
 
-    def __init__(self, user, host, path, port=22):
+    def __init__(self, notifier, user, host, path, port=22):
         """Initialize a new instance.
 
         :param user: str
@@ -72,6 +76,7 @@ class SshLocation(Location):
         :param path: str
         :param port: int
         """
+        self._notifier = notifier
         self._user = user
         self._host = host
         self._port = port
@@ -86,8 +91,10 @@ class SshLocation(Location):
             self._connect()
             return True
         except SSHException:
+            self._notifier.alert('Could not establish an SSH connection to the remote.')
             return False
         except socket.timeout:
+            self._notifier.alert('The remote timed out.')
             return False
 
     def _connect(self):
@@ -102,9 +109,10 @@ class SshLocation(Location):
         return client
 
     @classmethod
-    def from_configuration_data(cls, configuration_data):
+    def from_configuration_data(cls, notifier, configuration_data):
         """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
+        :param notifier: Notifier
         :param configuration_data: dict
         :return: cls
         :raise: ValueError
@@ -122,7 +130,7 @@ class SshLocation(Location):
                 raise ValueError('`port` must be an integer ranging from 0 to 65535.')
             kwargs['port'] = configuration_data['port']
 
-        return cls(**kwargs)
+        return cls(notifier, **kwargs)
 
     @property
     def path(self):
@@ -160,13 +168,21 @@ class SshLocation(Location):
 class FirstAvailableLocation(Location):
     """A location that decorates the first available of the given locations."""
 
-    def __init__(self, locations):
+    def __init__(self, locations=None):
         """Initialize a new instance.
 
         :param locations: Iterable[Location]
         """
-        self._locations = locations
+        self._locations = locations if locations is not None else []
         self._available_location = None
+
+    @property
+    def locations(self):
+        """Get the configured locations.
+
+        :return: Iterable[Location]
+        """
+        return self._locations
 
     def is_available(self):
         """Check if the target is available.

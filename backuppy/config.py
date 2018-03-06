@@ -6,14 +6,14 @@ import os
 class PluginConfiguration:
     """Defines a plugin and its configuration."""
 
-    def __init__(self, plugin_type, configuration_data):
+    def __init__(self, plugin_type, configuration_data=None):
         """Initialize a new instance.
 
         :param plugin_type: str
         :param configuration_data: Dict
         """
         self._type = plugin_type
-        self._configuration_data = configuration_data
+        self._configuration_data = configuration_data if configuration_data is not None else {}
 
     @property
     def type(self):
@@ -110,14 +110,6 @@ class Configuration:
         """
         return self._verbose
 
-    @verbose.setter
-    def verbose(self, verbose):
-        """Set output verbosity.
-
-        :param verbose: bool
-        """
-        self._verbose = verbose
-
     @property
     def name(self):
         """Get the back-up's name.
@@ -135,8 +127,16 @@ class Configuration:
         return os.path.dirname(self._configuration_file_path)
 
     @property
+    def source(self):
+        """Get the source's plugin configuration.
+
+        :return: PluginConfiguration
+        """
+        return self._source
+
+    @property
     def notifiers(self):
-        """Get the notifiers.
+        """Get the notifiers' plugin configurations.
 
         :return: Iterable[PluginConfiguration]
         """
@@ -144,7 +144,7 @@ class Configuration:
 
     @property
     def targets(self):
-        """Get the targets.
+        """Get the targets' plugin configurations.
 
         :return: Iterable[PluginConfiguration]
         """

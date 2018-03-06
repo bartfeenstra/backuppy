@@ -19,8 +19,6 @@ class ConfigurationTest(TestCase):
         target = Mock(PluginConfiguration)
         sut = Configuration(configuration_file_path, source, [target], verbose=True)
         self.assertTrue(sut.verbose)
-        sut.verbose = False
-        self.assertFalse(sut.verbose)
 
     def test_verbose_non_boolean(self):
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:

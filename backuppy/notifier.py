@@ -47,6 +47,14 @@ class GroupedNotifiers(Notifier):
         """
         self._notifiers = notifiers
 
+    @property
+    def notifiers(self):
+        """Get the grouped notifiers.
+
+        :return: Iterable[Notifier]
+        """
+        return self._notifiers
+
     def state(self, message):
         """Send a notification that may be ignored.
 
