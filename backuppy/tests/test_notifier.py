@@ -59,25 +59,25 @@ class NotifySendNotifierTest(TestCase):
         sut = NotifySendNotifier()
         message = 'Something happened!'
         sut.state(message)
-        m.assert_called_with(('notify-send', "'%s'" % message))
+        m.assert_called_with(('notify-send', '-c', 'backuppy', '-u', 'low', message))
 
     @patch('subprocess.call')
     def test_inform(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
         sut.inform(message)
-        m.assert_called_with(('notify-send', "'%s'" % message))
+        m.assert_called_with(('notify-send', '-c', 'backuppy', '-u', 'normal', message))
 
     @patch('subprocess.call')
     def test_confirm(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
         sut.confirm(message)
-        m.assert_called_with(('notify-send', "'%s'" % message))
+        m.assert_called_with(('notify-send', '-c', 'backuppy', '-u', 'normal', message))
 
     @patch('subprocess.call')
     def test_alert(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
         sut.alert(message)
-        m.assert_called_with(('notify-send', "'%s'" % message))
+        m.assert_called_with(('notify-send', '-c', 'backuppy', '-u', 'critical', message))
