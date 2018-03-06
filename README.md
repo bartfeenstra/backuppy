@@ -5,6 +5,10 @@
 ## About
 Backuppy backs up and restores your data using Rsync, allowing different routes to the same, or different destinations.
 
+The following instructions can be executed in any system Python environment, but you may want to use a
+[virtual environment](https://docs.python.org/3/library/venv.html). Alternatively, some actions can be performed using
+[tox](https://tox.readthedocs.io/) as well, which produces its own virtual environments in `.tox/py**`.
+
 ## License
 Backuppy is released under the [MIT](./LICENSE) license.
 
@@ -12,6 +16,9 @@ Backuppy is released under the [MIT](./LICENSE) license.
 
 ### Requirements
 - Python 2.7+
+
+### Installation
+In any Python environment, run `pip install git+https://github.com/bartfeenstra/backuppy.git`.
 
 ### Command line
 ```bash
@@ -31,23 +38,26 @@ Configuration files are written in JSON, and can be stored anywhere, under any n
 [View example](./backuppy/tests/resources/configuration/backuppy.json).
 
 ## Development
-The following instructions can be executed in any Python environment, but you may want to use a
-[virtual environment](https://docs.python.org/3/library/venv.html). Alternatively, some actions can be performed using
-[tox](https://tox.readthedocs.io/) as well, which produces its own virtual environments in `.tox/py**`.
 
 ### Requirements
 - The generic requirements documented earlier.
 - Bash (you're all good if `which bash` outputs a path in your terminal)
 
-### Building
-In any Python environment: `./bin/build-dev`.
+### Installation
+Run `git clone https://github.com/bartfeenstra/backuppy.git`.
 
-With tox: `tox --develop --notest`.
+If you wish to contribute code changes, you may want to fork this project first, and clone your own forked repository
+instead.
+
+### Building
+In any Python environment, run `./bin/build-dev`.
+
+With tox, run `tox --develop --notest`.
 
 ### Testing
-In any Python environment: `./bin/test`.
+In any Python environment, run `./bin/test`.
 
-With tox: `tox --develop`
+With tox, run `tox --develop`
 
 ### Fixing problems automatically
-In any Python environment: `./bin/fix`.
+In any Python environment, run `./bin/fix`.
