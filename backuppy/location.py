@@ -16,6 +16,13 @@ class Location:
         """
         pass
 
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        pass
+
 
 class PathLocation(Location):
     """Provide a local, path-based backup location."""
@@ -63,6 +70,13 @@ class PathLocation(Location):
         :return: str
         """
         return self._path
+
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        return self.path
 
 
 class SshLocation(Location):
@@ -163,6 +177,13 @@ class SshLocation(Location):
         :return: int
         """
         return self._port
+
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        return '%s@%s:%d/%s' % (self.user, self.host, self.port, self.path)
 
 
 class FirstAvailableLocation(Location):
