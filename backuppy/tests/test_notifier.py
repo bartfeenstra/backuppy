@@ -123,40 +123,35 @@ class CommandNotifierTest(TestCase):
         sut.alert(message)
         m.assert_called_with(fallback_args + [message])
 
-    @patch('subprocess.call')
-    def test_init_without_state_and_fallback(self, m):
+    def test_init_without_state_and_fallback(self):
         inform_args = ['some', 'inform']
         confirm_args = ['some', 'confirm']
         alert_args = ['some', 'alert']
         with self.assertRaises(ValueError):
             CommandNotifier(inform_args=inform_args, confirm_args=confirm_args, alert_args=alert_args)
 
-    @patch('subprocess.call')
-    def test_init_without_inform_and_fallback(self, m):
+    def test_init_without_inform_and_fallback(self):
         state_args = ['some', 'state']
         confirm_args = ['some', 'confirm']
         alert_args = ['some', 'alert']
         with self.assertRaises(ValueError):
             CommandNotifier(state_args=state_args, confirm_args=confirm_args, alert_args=alert_args)
 
-    @patch('subprocess.call')
-    def test_init_without_confirm_and_fallback(self, m):
+    def test_init_without_confirm_and_fallback(self):
         state_args = ['some', 'state']
         inform_args = ['some', 'inform']
         alert_args = ['some', 'alert']
         with self.assertRaises(ValueError):
             CommandNotifier(state_args=state_args, inform_args=inform_args, alert_args=alert_args)
 
-    @patch('subprocess.call')
-    def test_init_without_alert_and_fallback(self, m):
+    def test_init_without_alert_and_fallback(self):
         state_args = ['some', 'state']
         inform_args = ['some', 'inform']
         confirm_args = ['some', 'confirm']
         with self.assertRaises(ValueError):
             CommandNotifier(state_args=state_args, inform_args=inform_args, confirm_args=confirm_args)
 
-    @patch('subprocess.call')
-    def test_from_configuration_data_without_state_and_fallback(self, m):
+    def test_from_configuration_data_without_state_and_fallback(self):
         data = {
             'inform': ['some', 'inform'],
             'confirm': ['some', 'confirm'],
@@ -165,8 +160,7 @@ class CommandNotifierTest(TestCase):
         with self.assertRaises(ValueError):
             CommandNotifier.from_configuration_data(data)
 
-    @patch('subprocess.call')
-    def test_from_configuration_data_without_inform_and_fallback(self, m):
+    def test_from_configuration_data_without_inform_and_fallback(self):
         data = {
             'state': ['some', 'state'],
             'confirm': ['some', 'confirm'],
@@ -175,8 +169,7 @@ class CommandNotifierTest(TestCase):
         with self.assertRaises(ValueError):
             CommandNotifier.from_configuration_data(data)
 
-    @patch('subprocess.call')
-    def test_from_configuration_data_without_confirm_and_fallback(self, m):
+    def test_from_configuration_data_without_confirm_and_fallback(self):
         data = {
             'state': ['some', 'state'],
             'inform': ['some', 'inform'],
@@ -185,8 +178,7 @@ class CommandNotifierTest(TestCase):
         with self.assertRaises(ValueError):
             CommandNotifier.from_configuration_data(data)
 
-    @patch('subprocess.call')
-    def test_from_configuration_data_without_alert_and_fallback(self, m):
+    def test_from_configuration_data_without_alert_and_fallback(self):
         data = {
             'state': ['some', 'state'],
             'inform': ['some', 'inform'],
