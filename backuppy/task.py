@@ -22,7 +22,7 @@ def backup(configuration, notifier, source, target):
 
     notifier.inform('Backing up %s...' % configuration.name)
 
-    args = ['rsync', '-ar', '--numeric-ids', '-e', 'ssh -i $ssh_key']
+    args = ['rsync', '-ar', '--numeric-ids']
     if configuration.verbose:
         args.append('--verbose')
         args.append('--progress')
