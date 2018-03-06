@@ -26,19 +26,28 @@ optional arguments:
                         The path to the back-up configuration file.
 ```
 
+### Configuration file
+Configuration files are written in JSON, and can be anywhere, under any name.
+[View example](./backuppy/tests/resources/configuration/backuppy.json).
+
 ## Development
-The following instructions can be executed in any environment, but you may want to use a
-[virtual environment](https://docs.python.org/3/library/venv.html). Some actions can be performed using
-[tox](https://tox.readthedocs.io/) as well.
+The following instructions can be executed in any Python environment, but you may want to use a
+[virtual environment](https://docs.python.org/3/library/venv.html). Alternatively, some actions can be performed using
+[tox](https://tox.readthedocs.io/) as well, which produces its own virtual environments in `.tox/py**`.
 
 ### Requirements
 - The generic requirements documented earlier.
 - Bash (you're all good if `which bash` outputs a path in your terminal)
 
 ### Building
-In any environment: `./bin/build-dev`.
+In any Python environment: `./bin/build-dev`.
+
 With tox: `tox --develop --notest`.
 
 ### Testing
-In any environment: `./bin/test`.
+In any Python environment: `./bin/test`.
+
 With tox: `tox --develop`
+
+### Fixing problems automatically
+In any Python environment: `./bin/fix`.
