@@ -12,7 +12,7 @@ class SemanticVersionAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         """Invoke the action."""
-        if not re.fullmatch('^\d+\.\d+\.\d+$', values):
+        if re.search('^\d+\.\d+\.\d+$', values) is None:
             raise ValueError('Must be a Semantic Version (x.y.z). See https://semver.org/.')
         setattr(namespace, self.dest, values)
 

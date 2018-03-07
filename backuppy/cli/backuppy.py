@@ -1,4 +1,5 @@
 """Provide CLI components."""
+from __future__ import absolute_import
 import argparse
 
 from backuppy.config import from_json

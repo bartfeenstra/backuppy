@@ -1,14 +1,13 @@
 from unittest import TestCase
 
-from backuppy.cli.backuppy import main
-from backuppy.tests import CONFIGURATION_PATH
+from backuppy.cli.release import main
 
 
 class CliTest(TestCase):
-    def test(self):
-        configuration_file_path = '%s/backuppy.json' % CONFIGURATION_PATH
-        args = ['-c', configuration_file_path]
-        main(args)
+    def test_without_semantic_version(self):
+        args = ['--version', 'foo']
+        with self.assertRaises(ValueError):
+            main(args)
 
     def test_without_arguments(self):
         args = []
