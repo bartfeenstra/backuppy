@@ -24,40 +24,40 @@ def main(args):
                         help='The version to release.')
     cli_args = vars(parser.parse_args(args))
     version = cli_args['version']
-    _is_ready(version)
-    _tag(version)
-    _build(version)
-    _publish(version)
+    project_path = os.path.dirname(__file__)
+    _is_ready(project_path, version)
+    _tag(project_path, version)
+    _build(project_path, version)
+    _publish(project_path, version)
     print('Done.')
 
 
-def _is_ready(version):
+def _is_ready(project_path, version):
     # Check this version does not already exist.
-    tags = subprocess.check_output(['git', 'tag']).split()
+    tags = subprocess.check_output(['git', 'tag'], cwd=project_path).split()
     if version in tags:
         raise RuntimeError('Version %s already exists.' % version)
 
     # Check there are no uncommitted changes.
-    p = subprocess.Popen(['git', 'diff-index', '--quiet', 'HEAD', '--'])
+    p = subprocess.Popen(['git', 'diff-index', '--quiet', 'HEAD', '--'], cwd=project_path)
     code = p.wait()
     if 0 != code:
-        subprocess.call(['git', 'status'])
+        subprocess.call(['git', 'status'], cwd=project_path)
         raise RuntimeError('The Git repository has uncommitted changes.')
 
 
-def _tag(version):
-    root_path = os.path.dirname(__file__)
-    with open('/'.join([root_path, 'VERSION']), mode='w+t') as f:
+def _tag(project_path, version):
+    with open('/'.join([project_path, 'VERSION']), mode='w+t') as f:
         f.write(version)
-    subprocess.call(['git', 'add', 'VERSION'], cwd=root_path)
-    subprocess.call(['git', 'commit', '-m', 'Release version %s.' % version], cwd=root_path)
-    subprocess.call(['git', 'tag', version])
-    subprocess.call(['git', 'push', '--tags'])
+    subprocess.call(['git', 'add', 'VERSION'], cwd=project_path)
+    subprocess.call(['git', 'commit', '-m', 'Release version %s.' % version], cwd=project_path)
+    subprocess.call(['git', 'tag', version], cwd=project_path)
+    subprocess.call(['git', 'push', '--tags'], cwd=project_path)
 
 
-def _build(version):
+def _build(project_path, version):
     pass
 
 
-def _publish(version):
+def _publish(project_path, version):
     pass
