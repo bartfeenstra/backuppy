@@ -1,11 +1,16 @@
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
+
+from backuppy.config import Configuration, PluginConfiguration
+from backuppy.discover import new_notifier
 
 try:
     from unittest.mock import patch, Mock
 except ImportError:
     from mock import patch, Mock
 
-from backuppy.notifier import NotifySendNotifier, GroupedNotifiers, CommandNotifier
+from backuppy.notifier import NotifySendNotifier, GroupedNotifiers, CommandNotifier, FileNotifier, Notifier, \
+    StdioNotifier
 
 
 class GroupedNotifiersTest(TestCase):
@@ -216,3 +221,173 @@ class NotifySendNotifierTest(TestCase):
         message = 'Something happened!'
         sut.alert(message)
         m.assert_called_with(['notify-send', '-c', 'backuppy', '-u', 'critical', message])
+
+
+class FileNotifierTest(TestCase):
+    def test_state(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as fallback_file:
+                sut = FileNotifier(state_file=state_file, fallback_file=fallback_file)
+                message = 'Something happened!'
+                sut.state(message)
+                state_file.seek(0)
+                fallback_file.seek(0)
+                self.assertEquals(state_file.read(), message + '\n')
+                self.assertEquals(fallback_file.read(), '')
+
+    def test_state_should_fall_back(self):
+        with NamedTemporaryFile(mode='a+t') as fallback_file:
+            sut = FileNotifier(fallback_file=fallback_file)
+            message = 'Something happened!'
+            sut.state(message)
+            fallback_file.seek(0)
+            self.assertEquals(fallback_file.read(), message + '\n')
+
+    def test_inform(self):
+        with NamedTemporaryFile(mode='a+t') as inform_file:
+            with NamedTemporaryFile(mode='a+t') as fallback_file:
+                sut = FileNotifier(inform_file=inform_file, fallback_file=fallback_file)
+                message = 'Something happened!'
+                sut.inform(message)
+                inform_file.seek(0)
+                fallback_file.seek(0)
+                self.assertEquals(inform_file.read(), message + '\n')
+                self.assertEquals(fallback_file.read(), '')
+
+    def test_inform_should_fall_back(self):
+        with NamedTemporaryFile(mode='a+t') as fallback_file:
+            sut = FileNotifier(fallback_file=fallback_file)
+            message = 'Something happened!'
+            sut.inform(message)
+            fallback_file.seek(0)
+            self.assertEquals(fallback_file.read(), message + '\n')
+
+    def test_confirm(self):
+        with NamedTemporaryFile(mode='a+t') as confirm_file:
+            with NamedTemporaryFile(mode='a+t') as fallback_file:
+                sut = FileNotifier(confirm_file=confirm_file, fallback_file=fallback_file)
+                message = 'Something happened!'
+                sut.confirm(message)
+                confirm_file.seek(0)
+                fallback_file.seek(0)
+                self.assertEquals(confirm_file.read(), message + '\n')
+                self.assertEquals(fallback_file.read(), '')
+
+    def test_confirm_should_fall_back(self):
+        with NamedTemporaryFile(mode='a+t') as fallback_file:
+            sut = FileNotifier(fallback_file=fallback_file)
+            message = 'Something happened!'
+            sut.confirm(message)
+            fallback_file.seek(0)
+            self.assertEquals(fallback_file.read(), message + '\n')
+
+    def test_alert(self):
+        with NamedTemporaryFile(mode='a+t') as alert_file:
+            with NamedTemporaryFile(mode='a+t') as fallback_file:
+                sut = FileNotifier(alert_file=alert_file, fallback_file=fallback_file)
+                message = 'Something happened!'
+                sut.alert(message)
+                alert_file.seek(0)
+                fallback_file.seek(0)
+                self.assertEquals(alert_file.read(), message + '\n')
+                self.assertEquals(fallback_file.read(), '')
+
+    def test_alert_should_fall_back(self):
+        with NamedTemporaryFile(mode='a+t') as fallback_file:
+            sut = FileNotifier(fallback_file=fallback_file)
+            message = 'Something happened!'
+            sut.alert(message)
+            fallback_file.seek(0)
+            self.assertEquals(fallback_file.read(), message + '\n')
+
+    def test_init_without_state_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as inform_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    with self.assertRaises(ValueError):
+                        FileNotifier(inform_file=inform_file, confirm_file=confirm_file, alert_file=alert_file)
+
+    def test_init_without_inform_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    with self.assertRaises(ValueError):
+                        FileNotifier(state_file=state_file, confirm_file=confirm_file, alert_file=alert_file)
+
+    def test_init_without_confirm_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    with self.assertRaises(ValueError):
+                        FileNotifier(state_file=state_file, inform_file=inform_file, alert_file=alert_file)
+
+    def test_init_without_alert_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as confirm_file:
+                    with self.assertRaises(ValueError):
+                        FileNotifier(state_file=state_file, inform_file=inform_file, confirm_file=confirm_file)
+
+    def test_new_notifier_without_state_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as inform_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'inform': inform_file.name,
+                        'confirm': confirm_file.name,
+                        'alert': alert_file.name,
+                    }
+                configuration = Mock(Configuration)
+                notifier = Mock(Notifier)
+                with self.assertRaises(ValueError):
+                    new_notifier(configuration, notifier, PluginConfiguration('file', data))
+
+    def test_new_notifier_without_inform_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'state': state_file.name,
+                        'confirm': confirm_file.name,
+                        'alert': alert_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    notifier = Mock(Notifier)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, notifier, PluginConfiguration('file', data))
+
+    def test_new_notifier_without_confirm_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'state': state_file.name,
+                        'inform': inform_file.name,
+                        'alert': alert_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    notifier = Mock(Notifier)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, notifier, PluginConfiguration('file', data))
+
+    def test_new_notifier_without_alert_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as confirm_file:
+                    data = {
+                        'state': state_file.name,
+                        'inform': inform_file.name,
+                        'confirm': confirm_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    notifier = Mock(Notifier)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, notifier, PluginConfiguration('file', data))
+
+
+class StdioNotifierTest(TestCase):
+    def test_new_notifier(self):
+        configuration = Mock(Configuration)
+        notifier = Mock(Notifier)
+        notifier = new_notifier(configuration, notifier, PluginConfiguration('stdio'))
+        self.assertIsInstance(notifier, StdioNotifier)

@@ -1,7 +1,7 @@
 """Discover plugins."""
 
 from backuppy.location import PathLocation, SshLocation
-from backuppy.notifier import NotifySendNotifier, CommandNotifier
+from backuppy.notifier import NotifySendNotifier, CommandNotifier, FileNotifier, StdioNotifier
 
 
 def discover_location_types():
@@ -12,7 +12,8 @@ def discover_location_types():
     return {
         'path': lambda configuration, notifier, configuration_data: PathLocation.from_configuration_data(
             notifier, configuration.working_directory, configuration_data),
-        'ssh': lambda configuration, notifier, configuration_data: SshLocation.from_configuration_data(notifier, configuration_data),
+        'ssh': lambda configuration, notifier, configuration_data: SshLocation.from_configuration_data(notifier,
+                                                                                                       configuration_data),
     }
 
 
@@ -29,7 +30,8 @@ def new_location(configuration, notifier, location_configuration):
     if location_configuration.type not in location_types:
         raise ValueError('`Location type must be one of the following: %s, but `%s` was given.' % (
             ', '.join(location_types.keys()), location_configuration.type))
-    return location_types[location_configuration.type](configuration, notifier, location_configuration.configuration_data)
+    return location_types[location_configuration.type](configuration, notifier,
+                                                       location_configuration.configuration_data)
 
 
 def discover_notifier_types():
@@ -39,7 +41,11 @@ def discover_notifier_types():
     """
     return {
         'notify-send': lambda configuration, notifier, configuration_data: NotifySendNotifier(),
-        'command': lambda configuration, notifier, configuration_data: CommandNotifier.from_configuration_data(configuration_data),
+        'command': lambda configuration, notifier, configuration_data: CommandNotifier.from_configuration_data(
+            configuration_data),
+        'stdio': lambda configuration, notifier, configuration_data: StdioNotifier(),
+        'file': lambda configuration, notifier, configuration_data: FileNotifier.from_configuration_data(
+            configuration_data),
     }
 
 
@@ -56,4 +62,5 @@ def new_notifier(configuration, notifier, notifier_configuration):
     if notifier_configuration.type not in notifier_types:
         raise ValueError('`Notifier type must be one of the following: %s, but `%s` was given.' % (
             ', '.join(notifier_types.keys()), notifier_configuration.type))
-    return notifier_types[notifier_configuration.type](configuration, notifier, notifier_configuration.configuration_data)
+    return notifier_types[notifier_configuration.type](configuration, notifier,
+                                                       notifier_configuration.configuration_data)
