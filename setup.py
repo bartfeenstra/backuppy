@@ -3,12 +3,13 @@
 import os
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-REQUIREMENTS_PATH = '/'.join((os.path.dirname(os.path.abspath(__file__)), 'requirements.txt'))
+with open('/'.join((ROOT_PATH, 'VERSION'))) as f:
+    VERSION = f.read()
 
-with open(REQUIREMENTS_PATH) as f:
-    dependencies = f.read().split("\n")
+with open('/'.join((ROOT_PATH, 'requirements.txt'))) as f:
+    DEPENDENCIES = f.read().split("\n")
 
 SETUP = {
     'name': "backuppy",
@@ -18,7 +19,7 @@ SETUP = {
     'license': "MIT",
     'author': "Bart Feenstra",
     'url': "https://github.com/bartfeenstra/backuppy",
-    'install_requires': dependencies,
+    'install_requires': DEPENDENCIES,
     'packages': find_packages(),
     'scripts': [
         'bin/backuppy',

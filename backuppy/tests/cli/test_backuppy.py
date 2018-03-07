@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from backuppy.cli import main
+from backuppy.cli.backuppy import main
 from backuppy.tests import CONFIGURATION_PATH
 
 
