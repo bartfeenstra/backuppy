@@ -4,7 +4,7 @@ import argparse
 from backuppy.config import from_json
 from backuppy.discover import new_location, new_notifier
 from backuppy.location import FirstAvailableLocation
-from backuppy.notifier import FileNotifier, GroupedNotifiers
+from backuppy.notifier import GroupedNotifiers, StdioNotifier
 from backuppy.task import backup
 
 
@@ -18,7 +18,7 @@ def main(args):
     with open(configuration_file_path) as f:
         configuration = from_json(f)
 
-        notifier = GroupedNotifiers([FileNotifier.for_stdio()])
+        notifier = GroupedNotifiers([StdioNotifier()])
         for notifier_configuration in configuration.notifiers:
             notifier.notifiers.append(new_notifier(configuration, notifier, notifier_configuration))
 

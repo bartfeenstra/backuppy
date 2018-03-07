@@ -1,7 +1,7 @@
 """Discover plugins."""
 
 from backuppy.location import PathLocation, SshLocation
-from backuppy.notifier import NotifySendNotifier, CommandNotifier
+from backuppy.notifier import NotifySendNotifier, CommandNotifier, FileNotifier
 
 
 def discover_location_types():
@@ -40,6 +40,8 @@ def discover_notifier_types():
     return {
         'notify-send': lambda configuration, notifier, configuration_data: NotifySendNotifier(),
         'command': lambda configuration, notifier, configuration_data: CommandNotifier.from_configuration_data(configuration_data),
+        'stdio': lambda configuration, notifier, configuration_data: FileNotifier.for_stdio(),
+        'file': lambda configuration, notifier, configuration_data: FileNotifier.from_configuration_data(configuration_data),
     }
 
 
