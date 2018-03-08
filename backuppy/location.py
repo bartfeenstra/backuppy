@@ -1,14 +1,40 @@
 """Provide back-up locations."""
+import abc
 import os
 import socket
+import subprocess
+from abc import ABCMeta
+from time import strftime, gmtime
 
 import paramiko
+import six
 from paramiko import SSHException
 
 
-class Location:
+def new_snapshot_name():
+    """Build the name for a new back-up snapshot.
+
+    :return: str
+    """
+    return strftime('%Y-%m-%d_%H-%M-%S_UTC', gmtime())
+
+
+def new_snapshot_args(name):
+    """Build the cli arguments to create a back-up snapshot.
+
+    :return: Iterable[Iterable[str]]
+    """
+    return [
+        ['mkdir', name],
+        ['rm', '-f', 'latest'],
+        ['ln', '-s', name, 'latest'],
+    ]
+
+
+class Location(six.with_metaclass(ABCMeta)):
     """Provide a backup location."""
 
+    @abc.abstractmethod
     def is_available(self):
         """Check if the target is available.
 
@@ -16,11 +42,27 @@ class Location:
         """
         pass
 
+    @abc.abstractmethod
     def to_rsync(self):
         """Build this location's rsync path.
 
         :return: str
         """
+        pass
+
+
+class Source(Location):
+    """Provide a backup source."""
+
+    pass
+
+
+class Target(Location):
+    """Provide a backup target."""
+
+    @abc.abstractmethod
+    def snapshot(self):
+        """Create a new snapshot."""
         pass
 
 
@@ -71,16 +113,39 @@ class PathLocation(Location):
         """
         return self._path
 
+
+class PathSource(Source, PathLocation):
+    """Provide a local, path-based back-up source."""
+
     def to_rsync(self):
         """Build this location's rsync path.
 
         :return: str
         """
-        return self.path
+        return self._path
 
 
-class SshLocation(Location):
-    """Provide a location over SSH."""
+class PathTarget(Target, PathLocation):
+    """Provide a local, path-based back-up target."""
+
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        return '/'.join([self.path, 'latest'])
+
+    def snapshot(self):
+        """Create a new snapshot."""
+        snapshot_name = new_snapshot_name()
+        for args in new_snapshot_args(snapshot_name):
+            code = subprocess.call(args, cwd=self._path)
+            if 0 != code:
+                raise RuntimeError('Could not create snapshot at %s.' % self._path)
+
+
+class SshTarget(Target):
+    """Provide a target over SSH."""
 
     def __init__(self, notifier, user, host, path, port=22):
         """Initialize a new instance.
@@ -110,6 +175,13 @@ class SshLocation(Location):
         except socket.timeout:
             self._notifier.alert('The remote timed out.')
             return False
+
+    def snapshot(self):
+        """Create a new snapshot."""
+        snapshot_name = new_snapshot_name()
+        with self._connect() as client:
+            for args in new_snapshot_args(snapshot_name):
+                client.exec_command(' '.join(args))
 
     def _connect(self):
         """Connect to the remote.
@@ -183,44 +255,55 @@ class SshLocation(Location):
 
         :return: str
         """
-        return '%s@%s:%d/%s' % (self.user, self.host, self.port, self.path)
+        return '%s@%s:%d/%s/latest' % (self.user, self.host, self.port, self.path)
 
 
-class FirstAvailableLocation(Location):
-    """A location that decorates the first available of the given locations."""
+class FirstAvailableTarget(Target):
+    """A target that decorates the first available of the given targets."""
 
-    def __init__(self, locations=None):
+    def __init__(self, targets=None):
         """Initialize a new instance.
 
-        :param locations: Iterable[Location]
+        :param targets: Iterable[Target]
         """
-        self._locations = locations if locations is not None else []
-        self._available_location = None
+        self._targets = targets if targets is not None else []
+        self._available_target = None
 
     @property
-    def locations(self):
-        """Get the configured locations.
+    def targets(self):
+        """Get the configured targets.
 
-        :return: Iterable[Location]
+        :return: Iterable[Target]
         """
-        return self._locations
+        return self._targets
 
     def is_available(self):
         """Check if the target is available.
 
         :return: bool
         """
-        return self._get_available_location() is not None
+        return self._get_available_target() is not None
 
-    def _get_available_location(self):
-        """Get the first available location.
+    def to_rsync(self):
+        """Build this location's rsync path.
 
-        :return: Optional[Location]
+        :return: str
         """
-        if self._available_location is not None:
-            return self._available_location
+        return self._get_available_target().to_rsync()
 
-        for location in self._locations:
-            if location.is_available():
-                self._available_location = location
-                return location
+    def snapshot(self):
+        """Create a new snapshot."""
+        return self._get_available_target().snapshot()
+
+    def _get_available_target(self):
+        """Get the first available target.
+
+        :return: Optional[Target]
+        """
+        if self._available_target is not None:
+            return self._available_target
+
+        for target in self._targets:
+            if target.is_available():
+                self._available_target = target
+                return target

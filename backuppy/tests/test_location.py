@@ -1,9 +1,11 @@
+import os
 import socket
+import subprocess
 from unittest import TestCase
 
 from paramiko import SSHException
 
-from backuppy.location import PathLocation, SshLocation, FirstAvailableLocation
+from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, new_snapshot_args, PathTarget
 from backuppy.notifier import Notifier
 
 try:
@@ -11,18 +13,40 @@ try:
 except ImportError:
     from mock import Mock, patch
 
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from backports.tempfile import TemporaryDirectory
+
+
+class NewSnapshotArgsTest(TestCase):
+    def test_new_snapshot_args(self):
+        snapshot_name = 'foo_bar'
+        with TemporaryDirectory() as path:
+            for args in new_snapshot_args(snapshot_name):
+                subprocess.call(args, cwd=path)
+            self.assertTrue(os.path.exists('/'.join([path, snapshot_name])))
+            self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
+
 
 class PathLocationTest(TestCase):
+    class PathLocation(PathLocation):
+        def snapshot(self):
+            pass
+
+        def to_rsync(self):
+            pass
+
     def test_is_available(self):
         notifier = Mock(Notifier)
         path = '/tmp'
-        sut = PathLocation(notifier, path)
+        sut = self.PathLocation(notifier, path)
         self.assertTrue(sut.is_available())
 
     def test_is_available_unavailable(self):
         notifier = Mock(Notifier)
         path = '/tmp/SomeNoneExistentPath'
-        sut = PathLocation(notifier, path)
+        sut = self.PathLocation(notifier, path)
         self.assertFalse(sut.is_available())
 
     def test_from_configuration_data(self):
@@ -32,7 +56,7 @@ class PathLocationTest(TestCase):
         configuration_data = {
             'path': path,
         }
-        sut = PathLocation.from_configuration_data(notifier, working_directory, configuration_data)
+        sut = self.PathLocation.from_configuration_data(notifier, working_directory, configuration_data)
         self.assertEquals(sut.path, path)
 
     def test_from_configuration_data_without_path(self):
@@ -40,10 +64,23 @@ class PathLocationTest(TestCase):
         working_directory = '/'
         configuration_data = {}
         with self.assertRaises(ValueError):
-            PathLocation.from_configuration_data(notifier, working_directory, configuration_data)
+            self.PathLocation.from_configuration_data(notifier, working_directory, configuration_data)
 
 
-class SshLocationTest(TestCase):
+class PathTargetTest(TestCase):
+    def test_snapshot(self):
+        notifier = Mock(Notifier)
+        working_directory = '/'
+        with TemporaryDirectory() as path:
+            configuration_data = {
+                'path': path,
+            }
+            sut = PathTarget.from_configuration_data(notifier, working_directory, configuration_data)
+            sut.snapshot()
+            self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
+
+
+class SshTargetTest(TestCase):
     @patch('paramiko.SSHClient', autospec=True)
     def test_is_available(self, m):
         notifier = Mock(Notifier)
@@ -57,7 +94,7 @@ class SshLocationTest(TestCase):
             'port': port,
             'path': path,
         }
-        sut = SshLocation.from_configuration_data(notifier, configuration_data)
+        sut = SshTarget.from_configuration_data(notifier, configuration_data)
         self.assertTrue(sut.is_available())
         self.assertNotEquals([], m.return_value.connect.mock_calls)
         m.return_value.connect.assert_called_with(host, port, user, timeout=9)
@@ -76,7 +113,7 @@ class SshLocationTest(TestCase):
             'port': port,
             'path': path,
         }
-        sut = SshLocation.from_configuration_data(notifier, configuration_data)
+        sut = SshTarget.from_configuration_data(notifier, configuration_data)
         self.assertFalse(sut.is_available())
         self.assertNotEquals([], m.return_value.connect.mock_calls)
         m.return_value.connect.assert_called_with(host, port, user, timeout=9)
@@ -95,7 +132,7 @@ class SshLocationTest(TestCase):
             'port': port,
             'path': path,
         }
-        sut = SshLocation.from_configuration_data(notifier, configuration_data)
+        sut = SshTarget.from_configuration_data(notifier, configuration_data)
         self.assertFalse(sut.is_available())
         self.assertNotEquals([], m.return_value.connect.mock_calls)
         m.return_value.connect.assert_called_with(host, port, user, timeout=9)
@@ -112,7 +149,7 @@ class SshLocationTest(TestCase):
             'port': port,
             'path': path,
         }
-        sut = SshLocation.from_configuration_data(notifier, configuration_data)
+        sut = SshTarget.from_configuration_data(notifier, configuration_data)
         self.assertEquals(sut.path, path)
         self.assertEquals(sut.user, user)
         self.assertEquals(sut.host, host)
@@ -128,7 +165,7 @@ class SshLocationTest(TestCase):
             'host': host,
             'path': path,
         }
-        sut = SshLocation.from_configuration_data(notifier, configuration_data)
+        sut = SshTarget.from_configuration_data(notifier, configuration_data)
         self.assertEquals(sut.port, 22)
 
     def test_from_configuration_data_without_user(self):
@@ -142,7 +179,7 @@ class SshLocationTest(TestCase):
             'path': path,
         }
         with self.assertRaises(ValueError):
-            SshLocation.from_configuration_data(notifier, configuration_data)
+            SshTarget.from_configuration_data(notifier, configuration_data)
 
     def test_from_configuration_data_without_host(self):
         notifier = Mock(Notifier)
@@ -155,7 +192,7 @@ class SshLocationTest(TestCase):
             'path': path,
         }
         with self.assertRaises(ValueError):
-            SshLocation.from_configuration_data(notifier, configuration_data)
+            SshTarget.from_configuration_data(notifier, configuration_data)
 
     def test_from_configuration_data_without_path(self):
         notifier = Mock(Notifier)
@@ -168,7 +205,7 @@ class SshLocationTest(TestCase):
             'port': port,
         }
         with self.assertRaises(ValueError):
-            SshLocation.from_configuration_data(notifier, configuration_data)
+            SshTarget.from_configuration_data(notifier, configuration_data)
 
     def test_from_configuration_data_with_invalid_port_too_low(self):
         notifier = Mock(Notifier)
@@ -183,7 +220,7 @@ class SshLocationTest(TestCase):
             'path': path,
         }
         with self.assertRaises(ValueError):
-            SshLocation.from_configuration_data(notifier, configuration_data)
+            SshTarget.from_configuration_data(notifier, configuration_data)
 
     def test_from_configuration_data_with_invalid_port_too_high(self):
         notifier = Mock(Notifier)
@@ -198,26 +235,26 @@ class SshLocationTest(TestCase):
             'path': path,
         }
         with self.assertRaises(ValueError):
-            SshLocation.from_configuration_data(notifier, configuration_data)
+            SshTarget.from_configuration_data(notifier, configuration_data)
 
 
-class FirstAvailableLocationTest(TestCase):
+class FirstAvailableTargetTest(TestCase):
     def test_is_available(self):
         notifier = Mock(Notifier)
-        location_1 = PathLocation(notifier, '/tmp/SomeNoneExistentPath')
-        location_2 = PathLocation(notifier, '/tmp')
-        location_3 = PathLocation(notifier, '/tmp')
-        sut = FirstAvailableLocation([location_1, location_2, location_3])
+        location_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        location_2 = PathTarget(notifier, '/tmp')
+        location_3 = PathTarget(notifier, '/tmp')
+        sut = FirstAvailableTarget([location_1, location_2, location_3])
         self.assertTrue(sut.is_available())
         # Try again, so we cover the SUT's internal static cache.
         self.assertTrue(sut.is_available())
 
     def test_is_available_unavailable(self):
         notifier = Mock(Notifier)
-        location_1 = PathLocation(notifier, '/tmp/SomeNoneExistentPath')
-        location_2 = PathLocation(notifier, '/tmp/SomeNoneExistentPath')
-        location_3 = PathLocation(notifier, '/tmp/SomeNoneExistentPath')
-        sut = FirstAvailableLocation([location_1, location_2, location_3])
+        location_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        location_2 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        location_3 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        sut = FirstAvailableTarget([location_1, location_2, location_3])
         self.assertFalse(sut.is_available())
         # Try again, so we cover the SUT's internal static cache.
         self.assertFalse(sut.is_available())

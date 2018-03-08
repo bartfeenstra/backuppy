@@ -8,16 +8,25 @@ except ImportError:
     from mock import Mock
 
 from backuppy.config import PluginConfiguration, Configuration
-from backuppy.discover import new_location, new_notifier
+from backuppy.discover import new_source, new_notifier, new_target
 
 
-class NewLocationTest(TestCase):
-    def test_new_location_of_unknown_type(self):
-        location_configuration = PluginConfiguration('NonExistentType')
+class NewSourceTest(TestCase):
+    def test_new_source_of_unknown_type(self):
+        source_configuration = PluginConfiguration('NonExistentType')
         with self.assertRaises(ValueError):
             configuration = Mock(Configuration)
             notifier = Mock(Notifier)
-            new_location(configuration, notifier, location_configuration)
+            new_source(configuration, notifier, source_configuration)
+
+
+class NewTargetTest(TestCase):
+    def test_new_target_of_unknown_type(self):
+        target_configuration = PluginConfiguration('NonExistentType')
+        with self.assertRaises(ValueError):
+            configuration = Mock(Configuration)
+            notifier = Mock(Notifier)
+            new_target(configuration, notifier, target_configuration)
 
 
 class NewNotifierTest(TestCase):
