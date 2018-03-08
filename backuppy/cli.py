@@ -2,8 +2,8 @@
 import argparse
 
 from backuppy.config import from_json, from_yaml
-from backuppy.discover import new_location, new_notifier
-from backuppy.location import FirstAvailableLocation
+from backuppy.discover import new_notifier, new_source, new_target
+from backuppy.location import FirstAvailableTarget
 from backuppy.notifier import GroupedNotifiers, StdioNotifier
 from backuppy.task import backup
 
@@ -27,10 +27,10 @@ def main(args):
         for notifier_configuration in configuration.notifiers:
             notifier.notifiers.append(new_notifier(configuration, notifier, notifier_configuration))
 
-        source = new_location(configuration, notifier, configuration.source)
+        source = new_source(configuration, notifier, configuration.source)
 
-        target = FirstAvailableLocation()
+        target = FirstAvailableTarget()
         for target_configuration in configuration.targets:
-            target.locations.append(new_location(configuration, target, target_configuration))
+            target.targets.append(new_target(configuration, target, target_configuration))
 
         backup(configuration, notifier, source, target)
