@@ -2,6 +2,8 @@
 import json
 import os
 
+import yaml
+
 
 class PluginConfiguration:
     """Defines a plugin and its configuration."""
@@ -158,3 +160,12 @@ def from_json(f):
     :return: Configuration
     """
     return Configuration.from_configuration_data(f.name, json.load(f))
+
+
+def from_yaml(f):
+    """Parse configuration from a YAML file.
+
+    :param f: File
+    :return: Configuration
+    """
+    return Configuration.from_configuration_data(f.name, yaml.load(f))

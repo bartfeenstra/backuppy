@@ -9,7 +9,7 @@ try:
 except ImportError:
     from mock import Mock
 
-from backuppy.config import from_json, Configuration, PluginConfiguration
+from backuppy.config import from_json, Configuration, PluginConfiguration, from_yaml
 
 
 class ConfigurationTest(TestCase):
@@ -118,4 +118,11 @@ class FromJsonTest(TestCase):
     def test_from_json(self):
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
             configuration = from_json(f)
+        self.assertTrue(configuration.verbose)
+
+
+class FromYamlTest(TestCase):
+    def test_from_Yaml(self):
+        with open('%s/backuppy.yml' % CONFIGURATION_PATH) as f:
+            configuration = from_yaml(f)
         self.assertTrue(configuration.verbose)
