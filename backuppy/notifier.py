@@ -3,9 +3,12 @@ from __future__ import print_function
 
 import subprocess
 import sys
+from abc import ABCMeta
+
+from six import with_metaclass
 
 
-class Notifier:
+class Notifier(with_metaclass(ABCMeta), object):
     """Define a notifier."""
 
     def state(self, message):
@@ -40,12 +43,12 @@ class Notifier:
 class GroupedNotifiers(Notifier):
     """Define a notifier that groups other notifiers."""
 
-    def __init__(self, notifiers):
+    def __init__(self, notifiers=None):
         """Initialize a new instance.
 
         :param notifiers: Iterable[Notifier]
         """
-        self._notifiers = notifiers
+        self._notifiers = notifiers if notifiers is not None else []
 
     @property
     def notifiers(self):

@@ -2,22 +2,17 @@
 import subprocess
 
 from backuppy.config import Configuration
-from backuppy.location import Source, Target
-from backuppy.notifier import Notifier
 
 
-def backup(configuration, notifier, source, target):
+def backup(configuration):
     """Start a new back-up.
 
     :param configuration: Configuration
-    :param notifier: Notifier
-    :param source: Source
-    :param target: Target
     """
     assert isinstance(configuration, Configuration)
-    assert isinstance(notifier, Notifier)
-    assert isinstance(source, Source)
-    assert isinstance(target, Target)
+    notifier = configuration.notifier
+    source = configuration.source
+    target = configuration.target
 
     notifier.state('Initializing back-up %s' % configuration.name)
 

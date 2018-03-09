@@ -32,11 +32,11 @@ class BackupTest(TestCase):
 
                 # Create the target directory.
                 with TemporaryDirectory() as target_path:
-                    notifier = Mock(Notifier)
-                    source = PathSource(notifier, source_path + '/')
-                    target = PathTarget(notifier, target_path)
-                    configuration = Mock(Configuration)
-                    result = backup(configuration, notifier, source, target)
+                    configuration = Configuration('Foo')
+                    configuration.notifier = Mock(Notifier)
+                    configuration.source = PathSource(configuration.notifier, source_path + '/')
+                    configuration.target = PathTarget(configuration.notifier, target_path)
+                    result = backup(configuration)
                     self.assertTrue(result)
 
                     # Assert source and target content are identical.
@@ -50,11 +50,11 @@ class BackupTest(TestCase):
         with TemporaryDirectory() as source_path:
             # Create the target directory.
             with TemporaryDirectory() as target_path:
-                notifier = Mock(Notifier)
-                source = PathSource(notifier, source_path + '/NonExistentPath')
-                target = PathTarget(notifier, target_path)
-                configuration = Mock(Configuration)
-                result = backup(configuration, notifier, source, target)
+                configuration = Configuration('Foo')
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(configuration.notifier, source_path + '/NonExistentPath')
+                configuration.target = PathTarget(configuration.notifier, target_path)
+                result = backup(configuration)
                 self.assertFalse(result)
 
     def test_backup_with_unavailable_target(self):
@@ -62,9 +62,9 @@ class BackupTest(TestCase):
         with TemporaryDirectory() as source_path:
             # Create the target directory.
             with TemporaryDirectory() as target_path:
-                notifier = Mock(Notifier)
-                source = PathSource(notifier, source_path)
-                target = PathTarget(notifier, target_path + '/NonExistentPath')
-                configuration = Mock(Configuration)
-                result = backup(configuration, notifier, source, target)
+                configuration = Configuration('Foo')
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(configuration.notifier, source_path)
+                configuration.target = PathTarget(configuration.notifier, target_path + '/NonExistentPath')
+                result = backup(configuration)
                 self.assertFalse(result)

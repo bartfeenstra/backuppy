@@ -1,29 +1,35 @@
 name: Test
 verbose: true
 notifications:
- - type: notify-send
- - type: command
-   state:
-    - echo
-    - "{message}"
-   inform:
-    - echo
-    - "{message}"
-   confirm:
-    - echo
-    - "{message}"
-   alert:
-    - echo
-    - "{message}"
-   fallback:
-    - echo
-    - "{message}"
+  - type: notify-send
+  - type: command
+    configuration:
+      state:
+        - echo
+        - "{message}"
+      inform:
+        - echo
+        - "{message}"
+      confirm:
+        - echo
+        - "{message}"
+      alert:
+        - echo
+        - "{message}"
+      fallback:
+        - echo
+        - "{message}"
 source:
   type: path
-  path: ./source
-targets:
-  - type: ssh
-    host: example.com
-    port: 22
-    user: bart
-    path: ./target
+  configuration:
+    path: ./source
+target:
+  type: first_available
+  configuration:
+    targets:
+      - type: ssh
+        configuration:
+          host: example.com
+          port: 22
+          user: bart
+          path: ./target

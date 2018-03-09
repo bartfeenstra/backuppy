@@ -31,7 +31,7 @@ def new_snapshot_args(name):
     ]
 
 
-class Location(six.with_metaclass(ABCMeta)):
+class Location(six.with_metaclass(ABCMeta), object):
     """Provide a backup location."""
 
     @abc.abstractmethod
@@ -261,21 +261,13 @@ class SshTarget(Target):
 class FirstAvailableTarget(Target):
     """A target that decorates the first available of the given targets."""
 
-    def __init__(self, targets=None):
+    def __init__(self, targets):
         """Initialize a new instance.
 
         :param targets: Iterable[Target]
         """
-        self._targets = targets if targets is not None else []
+        self._targets = targets
         self._available_target = None
-
-    @property
-    def targets(self):
-        """Get the configured targets.
-
-        :return: Iterable[Target]
-        """
-        return self._targets
 
     def is_available(self):
         """Check if the target is available.
