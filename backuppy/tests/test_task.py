@@ -1,4 +1,3 @@
-import subprocess
 from unittest import TestCase
 
 from backuppy.location import PathSource, PathTarget
@@ -40,8 +39,6 @@ class BackupTest(TestCase):
                     self.assertTrue(result)
 
                     # Assert source and target content are identical.
-                    subprocess.call(['pwd'], cwd=target_path)
-                    subprocess.call(['ls', '-la'], cwd=target_path + '/latest')
                     with open('%s/latest/%s' % (target_path, file_name), ) as f:
                         self.assertEquals(f.read(), file_contents)
 
