@@ -2,7 +2,7 @@ from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
 from backuppy.config import Configuration, PluginConfiguration
-from backuppy.discover import new_notifier
+from backuppy.plugin import new_notifier
 
 try:
     from unittest.mock import patch, Mock

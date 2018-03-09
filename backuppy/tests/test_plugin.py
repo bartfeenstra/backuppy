@@ -8,7 +8,7 @@ except ImportError:
     from mock import Mock
 
 from backuppy.config import PluginConfiguration, Configuration
-from backuppy.discover import new_source, new_notifier, new_target
+from backuppy.plugin import new_source, new_notifier, new_target
 
 
 class NewSourceTest(TestCase):
