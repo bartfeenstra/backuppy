@@ -2,7 +2,7 @@
 import argparse
 
 from backuppy.config import from_json, from_yaml
-from backuppy.discover import new_notifier, new_source, new_target
+from backuppy.plugin import new_notifier, new_source, new_target
 from backuppy.location import FirstAvailableTarget
 from backuppy.notifier import GroupedNotifiers, StdioNotifier
 from backuppy.task import backup
