@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from backuppy.location import PathSource, PathTarget
 from backuppy.task import backup
 
 try:
@@ -13,7 +14,6 @@ except ImportError:
     from backports.tempfile import TemporaryDirectory
 
 from backuppy.config import Configuration
-from backuppy.location import PathLocation
 from backuppy.notifier import Notifier
 
 
@@ -31,15 +31,15 @@ class BackupTest(TestCase):
 
                 # Create the target directory.
                 with TemporaryDirectory() as target_path:
-                    notifier = Mock(Notifier)
-                    source = PathLocation(notifier, source_path + '/')
-                    target = PathLocation(notifier, target_path)
-                    configuration = Mock(Configuration)
-                    result = backup(configuration, notifier, source, target)
+                    configuration = Configuration('Foo')
+                    configuration.notifier = Mock(Notifier)
+                    configuration.source = PathSource(configuration.notifier, source_path + '/')
+                    configuration.target = PathTarget(configuration.notifier, target_path)
+                    result = backup(configuration)
                     self.assertTrue(result)
 
                     # Assert source and target content are identical.
-                    with open('%s/%s' % (target_path, file_name)) as f:
+                    with open('%s/latest/%s' % (target_path, file_name), ) as f:
                         self.assertEquals(f.read(), file_contents)
 
     def test_backup_with_unavailable_source(self):
@@ -47,11 +47,11 @@ class BackupTest(TestCase):
         with TemporaryDirectory() as source_path:
             # Create the target directory.
             with TemporaryDirectory() as target_path:
-                notifier = Mock(Notifier)
-                source = PathLocation(notifier, source_path + '/NonExistentPath')
-                target = PathLocation(notifier, target_path)
-                configuration = Mock(Configuration)
-                result = backup(configuration, notifier, source, target)
+                configuration = Configuration('Foo')
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(configuration.notifier, source_path + '/NonExistentPath')
+                configuration.target = PathTarget(configuration.notifier, target_path)
+                result = backup(configuration)
                 self.assertFalse(result)
 
     def test_backup_with_unavailable_target(self):
@@ -59,9 +59,9 @@ class BackupTest(TestCase):
         with TemporaryDirectory() as source_path:
             # Create the target directory.
             with TemporaryDirectory() as target_path:
-                notifier = Mock(Notifier)
-                source = PathLocation(notifier, source_path)
-                target = PathLocation(notifier, target_path + '/NonExistentPath')
-                configuration = Mock(Configuration)
-                result = backup(configuration, notifier, source, target)
+                configuration = Configuration('Foo')
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(configuration.notifier, source_path)
+                configuration.target = PathTarget(configuration.notifier, target_path + '/NonExistentPath')
+                result = backup(configuration)
                 self.assertFalse(result)

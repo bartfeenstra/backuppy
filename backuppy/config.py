@@ -2,105 +2,29 @@
 import json
 import os
 
+import yaml
 
-class PluginConfiguration:
-    """Defines a plugin and its configuration."""
-
-    def __init__(self, plugin_type, configuration_data=None):
-        """Initialize a new instance.
-
-        :param plugin_type: str
-        :param configuration_data: Dict
-        """
-        self._type = plugin_type
-        self._configuration_data = configuration_data if configuration_data is not None else {}
-
-    @property
-    def type(self):
-        """Get the plugin type.
-
-        :return: str
-        """
-        return self._type
-
-    @property
-    def configuration_data(self):
-        """Get the plugin's configuration data.
-
-        :return: Dict
-        """
-        return self._configuration_data
+from backuppy.location import Source, Target
+from backuppy.notifier import GroupedNotifiers, Notifier
+from backuppy.plugin import new_source, new_target, new_notifier
 
 
-class Configuration:
+class Configuration(object):
     """Provides back-up configuration."""
 
-    def __init__(self, configuration_file_path, source, targets, name=None, verbose=False, notifiers=None):
+    def __init__(self, name, working_directory=None, verbose=False):
         """Initialize a new instance.
 
-        :param configuration_file_path: str
-        :param source: PluginConfiguration
-        :param targets: Iterable[PluginConfiguration]
+        :param name: str
+        :param working_directory: str
         :param verbose: bool
-        :param notifiers: Iterable[PluginConfiguration]
         """
-        assert isinstance(source, PluginConfiguration)
-        self._source = source
-        if not targets:
-            raise ValueError('At least one target must be given.')
-        for target in targets:
-            assert isinstance(target, PluginConfiguration)
-        self._targets = targets
-        self._verbose = verbose
-        if notifiers is not None:
-            for notifier in notifiers:
-                assert isinstance(notifier, PluginConfiguration)
-            self._notifiers = notifiers
-        else:
-            self._notifiers = []
-        assert os.path.exists(configuration_file_path) and os.path.isfile(configuration_file_path)
-        self._configuration_file_path = configuration_file_path
         self._name = name
-
-    @classmethod
-    def from_configuration_data(cls, configuration_file_path, data):
-        """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
-
-        :param configuration_file_path: str
-        :param data: dict
-        :return: cls
-        :raise: ValueError
-        """
-        kwargs = {}
-
-        if 'verbose' in data:
-            if not isinstance(data['verbose'], bool):
-                raise ValueError('`verbose` must be a boolean.')
-            kwargs['verbose'] = data['verbose']
-
-        if 'source' not in data:
-            raise ValueError('`source` is required.')
-        if 'type' not in data['source']:
-            raise ValueError('`source[type]` is required.')
-        source = PluginConfiguration(data['source']['type'], data['source'])
-
-        targets = []
-        if 'targets' not in data:
-            raise ValueError('`targets` is required.')
-        for target_data in data['targets']:
-            if 'type' not in target_data:
-                raise ValueError('`targets[][type]` is required.')
-            targets.append(PluginConfiguration(target_data['type'], target_data))
-
-        notifiers = []
-        if 'notifications' in data:
-            for notifier_data in data['notifications']:
-                if 'type' not in notifier_data:
-                    raise ValueError('`notifiers[][type]` is required.')
-                notifiers.append(PluginConfiguration(notifier_data['type'], notifier_data))
-        kwargs['notifiers'] = notifiers
-
-        return cls(configuration_file_path, source, targets, **kwargs)
+        self._working_directory = working_directory
+        self._verbose = verbose
+        self._source = None
+        self._target = None
+        self._notifier = None
 
     @property
     def verbose(self):
@@ -116,7 +40,7 @@ class Configuration:
 
         :return: str
         """
-        return self._name if self._name else self._configuration_file_path
+        return self._name
 
     @property
     def working_directory(self):
@@ -124,31 +48,119 @@ class Configuration:
 
         :return: str
         """
-        return os.path.dirname(self._configuration_file_path)
+        if self._working_directory is None:
+            raise AttributeError('No working directory has been set.')
+
+        return self._working_directory
+
+    @property
+    def notifier(self):
+        """Get the notifier.
+
+        :return: Notifier
+        """
+        if self._notifier is None:
+            raise AttributeError('No notifier has been set.')
+
+        return self._notifier
+
+    @notifier.setter
+    def notifier(self, notifier):
+        """Set the notifier.
+
+        :param notifier: Notifier
+        """
+        assert isinstance(notifier, Notifier)
+        if self._notifier is not None:
+            raise AttributeError('A notifier has already been set.')
+        self._notifier = notifier
 
     @property
     def source(self):
-        """Get the source's plugin configuration.
+        """Get the back-up source.
 
-        :return: PluginConfiguration
+        :return: Source
         """
+        if self._source is None:
+            raise AttributeError('No source has been set.')
+
         return self._source
 
-    @property
-    def notifiers(self):
-        """Get the notifiers' plugin configurations.
+    @source.setter
+    def source(self, source):
+        """Set the back-up source.
 
-        :return: Iterable[PluginConfiguration]
+        :param source: source
         """
-        return self._notifiers
+        assert isinstance(source, Source)
+        if self._source is not None:
+            raise AttributeError('A source has already been set.')
+        self._source = source
 
     @property
-    def targets(self):
-        """Get the targets' plugin configurations.
+    def target(self):
+        """Get the back-up target.
 
-        :return: Iterable[PluginConfiguration]
+        :return: Target
         """
-        return self._targets
+        if self._target is None:
+            raise AttributeError('No target has been set.')
+
+        return self._target
+
+    @target.setter
+    def target(self, target):
+        """Set the back-up target.
+
+        :param target: target
+        """
+        assert isinstance(target, Target)
+        if self._target is not None:
+            raise AttributeError('A target has already been set.')
+        self._target = target
+
+
+def from_configuration_data(configuration_file_path, data):
+    """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+    :param configuration_file_path: str
+    :param data: dict
+    :return: cls
+    :raise: ValueError
+    """
+    name = data['name'] if 'name' in data else configuration_file_path
+    working_directory = os.path.dirname(configuration_file_path)
+    verbose = False
+    if 'verbose' in data:
+        if not isinstance(data['verbose'], bool):
+            raise ValueError('`verbose` must be a boolean.')
+        verbose = data['verbose']
+
+    configuration = Configuration(working_directory, name, verbose)
+
+    configuration.notifier = GroupedNotifiers()
+    if 'notifications' in data:
+        for notifier_data in data['notifications']:
+            if 'type' not in notifier_data:
+                raise ValueError('`notifiers[][type]` is required.')
+            notifier_configuration = notifier_data['configuration'] if 'configuration' in notifier_data else None
+            configuration.notifier.notifiers.append(new_notifier(configuration, notifier_data['type'], notifier_configuration))
+
+    if 'source' not in data:
+        raise ValueError('`source` is required.')
+    if 'type' not in data['source']:
+        raise ValueError('`source[type]` is required.')
+    source_configuration = data['source']['configuration'] if 'configuration' in data['source'] else None
+    configuration.source = new_source(configuration, data['source']['type'], source_configuration)
+
+    if 'target' not in data:
+        raise ValueError('`target` is required.')
+    if 'type' not in data['target']:
+        raise ValueError('`target[type]` is required.')
+    target_configuration = data['target']['configuration'] if 'configuration' in data['target'] else None
+    configuration.target = new_target(configuration, data['target']['type'], target_configuration)
+
+    return configuration
 
 
 def from_json(f):
@@ -157,4 +169,13 @@ def from_json(f):
     :param f: File
     :return: Configuration
     """
-    return Configuration.from_configuration_data(f.name, json.load(f))
+    return from_configuration_data(f.name, json.load(f))
+
+
+def from_yaml(f):
+    """Parse configuration from a YAML file.
+
+    :param f: File
+    :return: Configuration
+    """
+    return from_configuration_data(f.name, yaml.load(f))

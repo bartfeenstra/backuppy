@@ -1,15 +1,19 @@
 """Code to run back-ups."""
 import subprocess
 
+from backuppy.config import Configuration
 
-def backup(configuration, notifier, source, target):
+
+def backup(configuration):
     """Start a new back-up.
 
     :param configuration: Configuration
-    :param notifier: Notifier
-    :param source: Location
-    :param target: Location
     """
+    assert isinstance(configuration, Configuration)
+    notifier = configuration.notifier
+    source = configuration.source
+    target = configuration.target
+
     notifier.state('Initializing back-up %s' % configuration.name)
 
     if not source.is_available():
@@ -21,6 +25,8 @@ def backup(configuration, notifier, source, target):
         return False
 
     notifier.inform('Backing up %s...' % configuration.name)
+
+    target.snapshot()
 
     args = ['rsync', '-ar', '--numeric-ids']
     if configuration.verbose:
