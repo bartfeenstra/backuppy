@@ -9,7 +9,7 @@ with open('/'.join((ROOT_PATH, 'VERSION'))) as f:
     VERSION = f.read()
 
 with open('/'.join((ROOT_PATH, 'requirements.txt'))) as f:
-    DEPENDENCIES = f.read().split("\n")
+    DEPENDENCIES = f.read().split('\n')
 
 with open('/'.join((ROOT_PATH, 'README.md'))) as f:
     long_description = f.read()
@@ -22,13 +22,13 @@ except ImportError:
     pass
 
 SETUP = {
-    'name': "backuppy",
+    'name': 'backuppy',
     'description': 'A back-up tool.',
     'long_description': long_description,
     'version': VERSION,
-    'license': "MIT",
-    'author': "Bart Feenstra",
-    'url': "https://github.com/bartfeenstra/backuppy",
+    'license': 'MIT',
+    'author': 'Bart Feenstra',
+    'url': 'https://github.com/bartfeenstra/backuppy',
     'install_requires': DEPENDENCIES,
     'packages': find_packages(),
     'scripts': [
