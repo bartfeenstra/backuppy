@@ -51,12 +51,27 @@ class PathLocationTest(TestCase):
 
 
 class PathTargetTest(TestCase):
-    def test_snapshot(self):
+    def test_snapshot_without_name(self):
         notifier = Mock(Notifier)
         with TemporaryDirectory() as path:
             sut = PathTarget(notifier, path)
             sut.snapshot()
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
+
+    def test_snapshot_should_rebuild_latest_symlink(self):
+        snapshot_1_name = 'foo-bar'
+        snapshot_2_name = 'BAZ_QUX'
+        notifier = Mock(Notifier)
+        with TemporaryDirectory() as path:
+            sut = PathTarget(notifier, path)
+            sut.snapshot(snapshot_1_name)
+            sut.snapshot(snapshot_2_name)
+            latest_snapshot_path = subprocess.check_output(['readlink', '-f', '/'.join([path, 'latest'])]).decode(
+                'utf-8').strip()
+            self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
+            self.assertTrue(os.path.exists('/'.join([path, snapshot_1_name])))
+            self.assertTrue(os.path.exists('/'.join([path, snapshot_2_name])))
+            self.assertEquals(latest_snapshot_path, '/'.join([path, snapshot_2_name]))
 
 
 class SshTargetTest(TestCase):

@@ -61,8 +61,11 @@ class Target(Location):
     """Provide a backup target."""
 
     @abc.abstractmethod
-    def snapshot(self):
-        """Create a new snapshot."""
+    def snapshot(self, name=None):
+        """Create a new snapshot.
+
+        :param name: Optional[str]
+        """
         pass
 
 
@@ -117,10 +120,14 @@ class PathTarget(Target, PathLocation):
         """
         return '/'.join([self.path, 'latest'])
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        snapshot_name = new_snapshot_name()
-        for args in _new_snapshot_args(snapshot_name):
+    def snapshot(self, name=None):
+        """Create a new snapshot.
+
+        :param name: Optional[str]
+        """
+        if name is None:
+            name = new_snapshot_name()
+        for args in _new_snapshot_args(name):
             code = subprocess.call(args, cwd=self._path)
             if 0 != code:
                 raise RuntimeError('Could not create snapshot at %s.' % self._path)
@@ -158,11 +165,15 @@ class SshTarget(Target):
             self._notifier.alert('The remote timed out.')
             return False
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        snapshot_name = new_snapshot_name()
+    def snapshot(self, name=None):
+        """Create a new snapshot.
+
+        :param name: Optional[str]
+        """
+        if name is None:
+            name = new_snapshot_name()
         with self._connect() as client:
-            for args in _new_snapshot_args(snapshot_name):
+            for args in _new_snapshot_args(name):
                 client.exec_command(' '.join(args))
 
     def _connect(self):
@@ -241,9 +252,12 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target().to_rsync()
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        return self._get_available_target().snapshot()
+    def snapshot(self, name=None):
+        """Create a new snapshot.
+
+        :param name: Optional[str]
+        """
+        return self._get_available_target().snapshot(name)
 
     def _get_available_target(self):
         """Get the first available target.
