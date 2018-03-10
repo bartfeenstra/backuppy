@@ -23,7 +23,7 @@ except ImportError:
 
 SETUP = {
     'name': 'backuppy',
-    'description': 'A back-up tool.',
+    'description': 'Backuppy backs up and restores your data using rsync.',
     'long_description': long_description,
     'version': VERSION,
     'license': 'MIT',
