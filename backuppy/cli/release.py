@@ -24,7 +24,7 @@ def main(args):
                         help='The version to release.')
     cli_args = vars(parser.parse_args(args))
     version = cli_args['version']
-    project_path = os.path.dirname(__file__)
+    project_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     _is_ready(project_path, version)
     _tag(project_path, version)
     _build(project_path)
