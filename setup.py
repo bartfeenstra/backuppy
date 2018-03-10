@@ -34,6 +34,14 @@ SETUP = {
     'scripts': [
         'bin/backuppy',
     ],
+    'data_files': [
+        ('', [
+            'LICENSE',
+            'README.md',
+            'requirements.txt',
+            'VERSION',
+        ])
+    ],
 }
 
 if __name__ == '__main__':
