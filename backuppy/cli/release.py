@@ -47,8 +47,9 @@ def main(args):
     subprocess.call(['git', 'commit', '-m', 'Release version %s.' % version], cwd=project_path)
     subprocess.call(['git', 'tag', version], cwd=project_path)
 
-    # Build the package.
+    # Build and publish the package.
     subprocess.call(['python', 'setup.py', 'bdist_wheel', '--universal'], cwd=project_path)
+    subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)
 
     # Revert back to a development state.
     subprocess.call(['git', 'revert', '--no-edit', 'HEAD'], cwd=project_path)
@@ -56,9 +57,6 @@ def main(args):
     # Push changes.
     subprocess.call(['git', 'push', '--set-upstream', 'origin', branch], cwd=project_path)
     subprocess.call(['git', 'push', '--tags'], cwd=project_path)
-
-    # Publish the package.
-    subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)
 
     print(
         'Finalize the %s release by approving and merging its pull request at https://github.com/bartfeenstra/backuppy/compare/release-%s?expand=1.' % (
