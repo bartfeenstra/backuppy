@@ -36,6 +36,9 @@ def main(args):
         subprocess.call(['git', 'status'], cwd=project_path)
         raise RuntimeError('The Git repository has uncommitted changes.')
 
+    # Prepare the workspace directories.
+    subprocess.call(['rm', '-rf', 'backuppy.egg-info', 'build', 'dist'], cwd=project_path)
+
     # Create the release branch.
     branch = 'release-' + version
     subprocess.call(['git', 'checkout', '-b', branch], cwd=project_path)
