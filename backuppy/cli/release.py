@@ -65,7 +65,7 @@ def _tag(project_path, version):
     subprocess.call(['git', 'push', '--tags'], cwd=project_path)
     print(
         'Finalize the %s release by approving and merging its pull request at https://github.com/bartfeenstra/backuppy/compare/release-%s?expand=1.' % (
-        version, version))
+            version, version))
 
 
 def _build(project_path):
