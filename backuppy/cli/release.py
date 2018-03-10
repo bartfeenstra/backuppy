@@ -1,10 +1,8 @@
 """Provide CLI components."""
 import argparse
-import re
-
-import subprocess
-
 import os
+import re
+import subprocess
 
 
 class SemanticVersionAction(argparse.Action):
@@ -47,12 +45,27 @@ def _is_ready(project_path, version):
 
 
 def _tag(project_path, version):
+    # Create the release branch.
+    branch = 'release-' + version
+    subprocess.call(['git', 'checkout', '-b', branch], cwd=project_path)
+    subprocess.call(['git', 'branch', '-u', 'origin/' + branch], cwd=project_path)
+
+    # Commit the release to Git.
     with open('/'.join([project_path, 'VERSION']), mode='w+t') as f:
         f.write(version)
     subprocess.call(['git', 'add', 'VERSION'], cwd=project_path)
     subprocess.call(['git', 'commit', '-m', 'Release version %s.' % version], cwd=project_path)
     subprocess.call(['git', 'tag', version], cwd=project_path)
+
+    # Revert back to a development state.
+    subprocess.call(['git', 'revert', '--no-edit', 'HEAD'], cwd=project_path)
+
+    # Push changes.
+    subprocess.call(['git', 'push'], cwd=project_path)
     subprocess.call(['git', 'push', '--tags'], cwd=project_path)
+    print(
+        'Finalize the %s release by approving and merging its pull request at https://github.com/bartfeenstra/backuppy/compare/release-%s?expand=1.' % (
+        version, version))
 
 
 def _build(project_path):
