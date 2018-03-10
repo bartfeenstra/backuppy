@@ -19,7 +19,7 @@ def new_snapshot_name():
     return strftime('%Y-%m-%d_%H-%M-%S_UTC', gmtime())
 
 
-def new_snapshot_args(name):
+def _new_snapshot_args(name):
     """Build the cli arguments to create a back-up snapshot.
 
     :return: Iterable[Iterable[str]]
@@ -31,7 +31,7 @@ def new_snapshot_args(name):
     ]
 
 
-class Location(six.with_metaclass(ABCMeta)):
+class Location(six.with_metaclass(ABCMeta), object):
     """Provide a backup location."""
 
     @abc.abstractmethod
@@ -87,24 +87,6 @@ class PathLocation(Location):
             return True
         self._notifier.alert('Path `%s` does not exist.' % self._path)
 
-    @classmethod
-    def from_configuration_data(cls, notifier, working_directory, configuration_data):
-        """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
-
-        :param working_directory: str
-        :param configuration_data: dict
-        :return: cls
-        :raise: ValueError
-        """
-        if 'path' not in configuration_data:
-            raise ValueError('`path` is required.')
-        path_data = configuration_data['path']
-        if '/' != path_data[0]:
-            path_data = '%s/%s' % (working_directory, path_data)
-        path = path_data
-
-        return cls(notifier, path)
-
     @property
     def path(self):
         """Get the location's file path.
@@ -138,7 +120,7 @@ class PathTarget(Target, PathLocation):
     def snapshot(self):
         """Create a new snapshot."""
         snapshot_name = new_snapshot_name()
-        for args in new_snapshot_args(snapshot_name):
+        for args in _new_snapshot_args(snapshot_name):
             code = subprocess.call(args, cwd=self._path)
             if 0 != code:
                 raise RuntimeError('Could not create snapshot at %s.' % self._path)
@@ -180,7 +162,7 @@ class SshTarget(Target):
         """Create a new snapshot."""
         snapshot_name = new_snapshot_name()
         with self._connect() as client:
-            for args in new_snapshot_args(snapshot_name):
+            for args in _new_snapshot_args(snapshot_name):
                 client.exec_command(' '.join(args))
 
     def _connect(self):
@@ -193,30 +175,6 @@ class SshTarget(Target):
         client.set_missing_host_key_policy(paramiko.WarningPolicy())
         client.connect(self._host, self._port, self._user, timeout=9)
         return client
-
-    @classmethod
-    def from_configuration_data(cls, notifier, configuration_data):
-        """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
-
-        :param notifier: Notifier
-        :param configuration_data: dict
-        :return: cls
-        :raise: ValueError
-        """
-        kwargs = {}
-
-        required_string_names = ('user', 'host', 'path')
-        for required_string_name in required_string_names:
-            if required_string_name not in configuration_data:
-                raise ValueError('`%s` is required.' % required_string_name)
-            kwargs[required_string_name] = configuration_data[required_string_name]
-
-        if 'port' in configuration_data:
-            if configuration_data['port'] < 0 or configuration_data['port'] > 65535:
-                raise ValueError('`port` must be an integer ranging from 0 to 65535.')
-            kwargs['port'] = configuration_data['port']
-
-        return cls(notifier, **kwargs)
 
     @property
     def path(self):
@@ -261,21 +219,13 @@ class SshTarget(Target):
 class FirstAvailableTarget(Target):
     """A target that decorates the first available of the given targets."""
 
-    def __init__(self, targets=None):
+    def __init__(self, targets):
         """Initialize a new instance.
 
         :param targets: Iterable[Target]
         """
-        self._targets = targets if targets is not None else []
+        self._targets = targets
         self._available_target = None
-
-    @property
-    def targets(self):
-        """Get the configured targets.
-
-        :return: Iterable[Target]
-        """
-        return self._targets
 
     def is_available(self):
         """Check if the target is available.

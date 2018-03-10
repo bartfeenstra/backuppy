@@ -2,9 +2,6 @@
 import argparse
 
 from backuppy.config import from_json, from_yaml
-from backuppy.plugin import new_notifier, new_source, new_target
-from backuppy.location import FirstAvailableTarget
-from backuppy.notifier import GroupedNotifiers, StdioNotifier
 from backuppy.task import backup
 
 
@@ -23,14 +20,4 @@ def main(args):
         else:
             raise ValueError('Configuration files must have *.json, *.yml, or *.yaml extensions.')
 
-        notifier = GroupedNotifiers([StdioNotifier()])
-        for notifier_configuration in configuration.notifiers:
-            notifier.notifiers.append(new_notifier(configuration, notifier, notifier_configuration))
-
-        source = new_source(configuration, notifier, configuration.source)
-
-        target = FirstAvailableTarget()
-        for target_configuration in configuration.targets:
-            target.targets.append(new_target(configuration, target, target_configuration))
-
-        backup(configuration, notifier, source, target)
+        backup(configuration)
