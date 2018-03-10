@@ -27,8 +27,8 @@ def main(args):
     project_path = os.path.dirname(__file__)
     _is_ready(project_path, version)
     _tag(project_path, version)
-    _build(project_path, version)
-    _publish(project_path, version)
+    _build(project_path)
+    _publish(project_path)
     print('Done.')
 
 
@@ -55,9 +55,9 @@ def _tag(project_path, version):
     subprocess.call(['git', 'push', '--tags'], cwd=project_path)
 
 
-def _build(project_path, version):
-    pass
+def _build(project_path):
+    subprocess.call(['python', 'setup.py', 'bdist_wheel', '--universal'], cwd=project_path)
 
 
-def _publish(project_path, version):
-    pass
+def _publish(project_path):
+    subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)

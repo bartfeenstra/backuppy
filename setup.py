@@ -11,10 +11,20 @@ with open('/'.join((ROOT_PATH, 'VERSION'))) as f:
 with open('/'.join((ROOT_PATH, 'requirements.txt'))) as f:
     DEPENDENCIES = f.read().split("\n")
 
+with open('/'.join((ROOT_PATH, 'README.md'))) as f:
+    long_description = f.read()
+
+try:
+    from m2r import convert
+    long_description = convert(long_description)
+except ImportError:
+    # Allow this to fail, because we cannot guarantee this dependency is installed.
+    pass
+
 SETUP = {
     'name': "backuppy",
     'description': 'A back-up tool.',
-    'long_description': open('README.md').read(),
+    'long_description': long_description,
     'version': VERSION,
     'license': "MIT",
     'author': "Bart Feenstra",
