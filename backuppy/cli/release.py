@@ -23,14 +23,7 @@ def main(args):
     cli_args = vars(parser.parse_args(args))
     version = cli_args['version']
     project_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    _is_ready(project_path, version)
-    _tag(project_path, version)
-    _build(project_path)
-    _publish(project_path)
-    print('Done.')
 
-
-def _is_ready(project_path, version):
     # Check this version does not already exist.
     tags = subprocess.check_output(['git', 'tag'], cwd=project_path).split()
     if version in tags:
@@ -43,8 +36,6 @@ def _is_ready(project_path, version):
         subprocess.call(['git', 'status'], cwd=project_path)
         raise RuntimeError('The Git repository has uncommitted changes.')
 
-
-def _tag(project_path, version):
     # Create the release branch.
     branch = 'release-' + version
     subprocess.call(['git', 'checkout', '-b', branch], cwd=project_path)
@@ -56,20 +47,19 @@ def _tag(project_path, version):
     subprocess.call(['git', 'commit', '-m', 'Release version %s.' % version], cwd=project_path)
     subprocess.call(['git', 'tag', version], cwd=project_path)
 
+    # Build the package.
+    subprocess.call(['python', 'setup.py', 'bdist_wheel', '--universal'], cwd=project_path)
+
     # Revert back to a development state.
     subprocess.call(['git', 'revert', '--no-edit', 'HEAD'], cwd=project_path)
 
     # Push changes.
     subprocess.call(['git', 'push', '--set-upstream', 'origin', branch], cwd=project_path)
     subprocess.call(['git', 'push', '--tags'], cwd=project_path)
+
+    # Publish the package.
+    subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)
+
     print(
         'Finalize the %s release by approving and merging its pull request at https://github.com/bartfeenstra/backuppy/compare/release-%s?expand=1.' % (
             version, version))
-
-
-def _build(project_path):
-    subprocess.call(['python', 'setup.py', 'bdist_wheel', '--universal'], cwd=project_path)
-
-
-def _publish(project_path):
-    subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)
