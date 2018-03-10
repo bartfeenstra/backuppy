@@ -21,19 +21,59 @@ def _new(available_plugin_types, configuration, plugin_type, plugin_configuratio
     return available_plugin_types[plugin_type](configuration, plugin_configuration_data)
 
 
-def discover_source_types():
+def _new_path_location_from_configuration_data(cls, configuration, configuration_data):
+    """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+    :param configuration: Configuration
+    :param configuration_data: dict
+    :return: cls
+    :raise: ValueError
+    """
+    if 'path' not in configuration_data:
+        raise ValueError('`path` is required.')
+    path_data = configuration_data['path']
+    if '/' != path_data[0]:
+        path_data = '%s/%s' % (configuration.working_directory, path_data)
+    path = path_data
+
+    return cls(configuration.notifier, path)
+
+
+def _discover_source_types():
     """Discover the available source types.
 
     :return: Dict
     """
     return {
-        'path': lambda configuration, configuration_data: PathSource.from_configuration_data(configuration.notifier,
-                                                                                             configuration.working_directory,
-                                                                                             configuration_data),
+        'path': partial(_new_path_location_from_configuration_data, PathSource),
     }
 
 
-new_source = partial(_new, discover_source_types())
+new_source = partial(_new, _discover_source_types())
+
+
+def _new_ssh_target_from_configuration_data(configuration, configuration_data):
+    """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+    :param notifier: Notifier
+    :param configuration_data: dict
+    :return: cls
+    :raise: ValueError
+    """
+    kwargs = {}
+
+    required_string_names = ('user', 'host', 'path')
+    for required_string_name in required_string_names:
+        if required_string_name not in configuration_data:
+            raise ValueError('`%s` is required.' % required_string_name)
+        kwargs[required_string_name] = configuration_data[required_string_name]
+
+    if 'port' in configuration_data:
+        if configuration_data['port'] < 0 or configuration_data['port'] > 65535:
+            raise ValueError('`port` must be an integer ranging from 0 to 65535.')
+        kwargs['port'] = configuration_data['port']
+
+    return SshTarget(configuration.notifier, **kwargs)
 
 
 def _new_first_available_target_from_configuration_data(configuration, configuration_data):
@@ -47,30 +87,28 @@ def _new_first_available_target_from_configuration_data(configuration, configura
     targets = []
     for target_configuration_data in configuration_data['targets']:
         target_configuration_data.setdefault('configuration')
-        targets.append(new_target(configuration, target_configuration_data['type'], target_configuration_data['configuration']))
+        targets.append(
+            new_target(configuration, target_configuration_data['type'], target_configuration_data['configuration']))
 
     return FirstAvailableTarget(targets)
 
 
-def discover_target_types():
+def _discover_target_types():
     """Discover the available target types.
 
     :return: Dict
     """
     return {
-        'path': lambda configuration, configuration_data: PathTarget.from_configuration_data(configuration.notifier,
-                                                                                             configuration.working_directory,
-                                                                                             configuration_data),
-        'ssh': lambda configuration, configuration_data: SshTarget.from_configuration_data(configuration.notifier,
-                                                                                           configuration_data),
+        'path': partial(_new_path_location_from_configuration_data, PathTarget),
+        'ssh': _new_ssh_target_from_configuration_data,
         'first_available': _new_first_available_target_from_configuration_data,
     }
 
 
-new_target = partial(_new, discover_target_types())
+new_target = partial(_new, _discover_target_types())
 
 
-def discover_notifier_types():
+def _discover_notifier_types():
     """Discover the available notifier types.
 
     :return: Dict
@@ -84,4 +122,4 @@ def discover_notifier_types():
     }
 
 
-new_notifier = partial(_new, discover_notifier_types())
+new_notifier = partial(_new, _discover_notifier_types())
