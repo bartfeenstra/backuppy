@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/bartfeenstra/backuppy.svg?branch=master)](https://travis-ci.org/bartfeenstra/backuppy) [![Coverage Status](https://coveralls.io/repos/github/bartfeenstra/backuppy/badge.svg?branch=master)](https://coveralls.io/github/bartfeenstra/backuppy?branch=master) ![Backuppy runs on Python 2.7, 3.5, and 3.6](https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-blue.svg) ![Latest Git tag](https://img.shields.io/github/tag/bartfeenstra/backuppy.svg) ![Backuppy is released under the MIT license](https://img.shields.io/github/license/bartfeenstra/backuppy.svg)
 
 ## About
-Backuppy backs up and restores your data using Rsync, allowing different routes to the same, or different destinations.
+Backuppy backs up and restores your data using rsync, allowing different routes to the same, or different destinations.
 
 The following instructions can be executed in any system Python environment, but you may want to use a
 [virtual environment](https://docs.python.org/3/library/venv.html). Alternatively, some actions can be performed using
@@ -18,7 +18,7 @@ Backuppy is released under the [MIT](./LICENSE) license.
 - Python 2.7+
 
 ### Installation
-In any Python environment, run `pip install git+https://github.com/bartfeenstra/backuppy.git`.
+In any Python environment, run `pip install backuppy`.
 
 ### Command line
 ```bash

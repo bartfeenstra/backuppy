@@ -1,4 +1,6 @@
 /.coverage
 /.tox
 /backuppy.egg-info
+/build
+/dist
 *.pyc
