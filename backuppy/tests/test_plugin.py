@@ -1,6 +1,7 @@
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
-from backuppy.notifier import Notifier
+from backuppy.notifier import Notifier, StdioNotifier, CommandNotifier, FileNotifier
 
 try:
     from unittest.mock import Mock
@@ -177,3 +178,149 @@ class NewSshTargetTest(TestCase):
         }
         with self.assertRaises(ValueError):
             new_target(configuration, 'ssh', configuration_data)
+
+
+class NewCommandNotifierTest(TestCase):
+    def test_new_notifier_without_fallback(self):
+        configuration = Configuration('Foo')
+        data = {
+            'state': ['some', 'state'],
+            'inform': ['some', 'inform'],
+            'confirm': ['some', 'confirm'],
+            'alert': ['some', 'alert'],
+        }
+        notifier = new_notifier(configuration, 'command', data)
+        self.assertIsInstance(notifier, CommandNotifier)
+
+    def test_new_notifier_with_fallback_only(self):
+        configuration = Configuration('Foo')
+        data = {
+            'fallback': ['some', 'fallback'],
+        }
+        notifier = new_notifier(configuration, 'command', data)
+        self.assertIsInstance(notifier, CommandNotifier)
+
+    def test_new_notifier_without_state_and_fallback(self):
+        configuration = Configuration('Foo')
+        data = {
+            'inform': ['some', 'inform'],
+            'confirm': ['some', 'confirm'],
+            'alert': ['some', 'alert'],
+        }
+        with self.assertRaises(ValueError):
+            new_notifier(configuration, 'command', data)
+
+    def test_new_notifier_without_inform_and_fallback(self):
+        configuration = Configuration('Foo')
+        data = {
+            'state': ['some', 'state'],
+            'confirm': ['some', 'confirm'],
+            'alert': ['some', 'alert'],
+        }
+        with self.assertRaises(ValueError):
+            new_notifier(configuration, 'command', data)
+
+    def test_new_notifier_without_confirm_and_fallback(self):
+        configuration = Configuration('Foo')
+        data = {
+            'state': ['some', 'state'],
+            'inform': ['some', 'inform'],
+            'alert': ['some', 'alert'],
+        }
+        with self.assertRaises(ValueError):
+            new_notifier(configuration, 'command', data)
+
+    def test_new_notifier_without_alert_and_fallback(self):
+        configuration = Configuration('Foo')
+        data = {
+            'state': ['some', 'state'],
+            'inform': ['some', 'inform'],
+            'confirm': ['some', 'confirm'],
+        }
+        with self.assertRaises(ValueError):
+            new_notifier(configuration, 'command', data)
+
+
+class NewFileNotifierTest(TestCase):
+    def test_new_notifier_without_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as confirm_file:
+                    with NamedTemporaryFile(mode='a+t') as alert_file:
+                        configuration = Configuration('Foo')
+                        data = {
+                            'state': state_file.name,
+                            'inform': inform_file.name,
+                            'confirm': confirm_file.name,
+                            'alert': alert_file.name,
+                        }
+                        notifier = new_notifier(configuration, 'file', data)
+                        self.assertIsInstance(notifier, FileNotifier)
+
+    def test_new_notifier_with_fallback_only(self):
+        with NamedTemporaryFile(mode='a+t') as fallback_file:
+            configuration = Configuration('Foo')
+            data = {
+                'fallback': fallback_file.name,
+            }
+            notifier = new_notifier(configuration, 'file', data)
+            self.assertIsInstance(notifier, FileNotifier)
+
+    def test_new_notifier_without_state_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as inform_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'inform': inform_file.name,
+                        'confirm': confirm_file.name,
+                        'alert': alert_file.name,
+                    }
+                configuration = Mock(Configuration)
+                with self.assertRaises(ValueError):
+                    new_notifier(configuration, 'file', data)
+
+    def test_new_notifier_without_inform_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as confirm_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'state': state_file.name,
+                        'confirm': confirm_file.name,
+                        'alert': alert_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, 'file', data)
+
+    def test_new_notifier_without_confirm_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as alert_file:
+                    data = {
+                        'state': state_file.name,
+                        'inform': inform_file.name,
+                        'alert': alert_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, 'file', data)
+
+    def test_new_notifier_without_alert_and_fallback(self):
+        with NamedTemporaryFile(mode='a+t') as state_file:
+            with NamedTemporaryFile(mode='a+t') as inform_file:
+                with NamedTemporaryFile(mode='a+t') as confirm_file:
+                    data = {
+                        'state': state_file.name,
+                        'inform': inform_file.name,
+                        'confirm': confirm_file.name,
+                    }
+                    configuration = Mock(Configuration)
+                    with self.assertRaises(ValueError):
+                        new_notifier(configuration, 'file', data)
+
+
+class StdioNotifierTest(TestCase):
+    def test_new_notifier(self):
+        configuration = Mock(Configuration)
+        notifier = new_notifier(configuration, 'stdio')
+        self.assertIsInstance(notifier, StdioNotifier)

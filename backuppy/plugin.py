@@ -108,6 +108,44 @@ def _discover_target_types():
 new_target = partial(_new, _discover_target_types())
 
 
+def _new_command_notifier_from_configuration_data(configuration, configuration_data):
+    """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+    :param configuration: Configuration
+    :param configuration_data: dict
+    :return: CommandNotifier
+    :raise: ValueError
+    """
+    state_args = configuration_data['state'] if 'state' in configuration_data else None
+    inform_args = configuration_data['inform'] if 'inform' in configuration_data else None
+    confirm_args = configuration_data['confirm'] if 'confirm' in configuration_data else None
+    alert_args = configuration_data['alert'] if 'alert' in configuration_data else None
+    fallback_args = configuration_data['fallback'] if 'fallback' in configuration_data else None
+    if None in [state_args, inform_args, confirm_args, alert_args] and fallback_args is None:
+        raise ValueError('`fallback` must be given if one or more of the other arguments are omitted.')
+
+    return CommandNotifier(state_args, inform_args, confirm_args, alert_args, fallback_args)
+
+
+def _new_file_notifier_from_configuration_data(configuration, configuration_data):
+    """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
+
+    :param configuration: Configuration
+    :param configuration_data: dict
+    :return: CommandNotifier
+    :raise: ValueError
+    """
+    state_file = open(configuration_data['state'], mode='a+t') if 'state' in configuration_data else None
+    inform_file = open(configuration_data['inform'], mode='a+t') if 'inform' in configuration_data else None
+    confirm_file = open(configuration_data['confirm'], mode='a+t') if 'confirm' in configuration_data else None
+    alert_file = open(configuration_data['alert'], mode='a+t') if 'alert' in configuration_data else None
+    fallback_file = open(configuration_data['fallback'], mode='a+t') if 'fallback' in configuration_data else None
+    if None in [state_file, inform_file, confirm_file, alert_file] and fallback_file is None:
+        raise ValueError('`fallback` must be given if one or more of the other arguments are omitted.')
+
+    return FileNotifier(state_file, inform_file, confirm_file, alert_file, fallback_file)
+
+
 def _discover_notifier_types():
     """Discover the available notifier types.
 
@@ -115,10 +153,9 @@ def _discover_notifier_types():
     """
     return {
         'notify-send': lambda configuration, configuration_data: NotifySendNotifier(),
-        'command': lambda configuration, configuration_data: CommandNotifier.from_configuration_data(
-            configuration_data),
+        'command': _new_command_notifier_from_configuration_data,
         'stdio': lambda configuration, configuration_data: StdioNotifier(),
-        'file': lambda configuration, configuration_data: FileNotifier.from_configuration_data(configuration_data),
+        'file': _new_file_notifier_from_configuration_data,
     }
 
 
