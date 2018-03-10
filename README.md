@@ -18,7 +18,7 @@ Backuppy is released under the [MIT](./LICENSE) license.
 - Python 2.7+
 
 ### Installation
-In any Python environment, run `pip install git+https://github.com/bartfeenstra/backuppy.git`.
+In any Python environment, run `pip install backuppy`.
 
 ### Command line
 ```bash
