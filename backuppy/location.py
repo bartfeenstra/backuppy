@@ -61,10 +61,10 @@ class Target(Location):
     """Provide a backup target."""
 
     @abc.abstractmethod
-    def snapshot(self, name=None):
+    def snapshot(self, name):
         """Create a new snapshot.
 
-        :param name: Optional[str]
+        :param name: str
         """
         pass
 
@@ -120,13 +120,11 @@ class PathTarget(Target, PathLocation):
         """
         return '/'.join([self.path, 'latest'])
 
-    def snapshot(self, name=None):
+    def snapshot(self, name):
         """Create a new snapshot.
 
-        :param name: Optional[str]
+        :param name: str
         """
-        if name is None:
-            name = new_snapshot_name()
         for args in _new_snapshot_args(name):
             code = subprocess.call(args, cwd=self._path)
             if 0 != code:
@@ -165,13 +163,11 @@ class SshTarget(Target):
             self._notifier.alert('The remote timed out.')
             return False
 
-    def snapshot(self, name=None):
+    def snapshot(self, name):
         """Create a new snapshot.
 
-        :param name: Optional[str]
+        :param name: str
         """
-        if name is None:
-            name = new_snapshot_name()
         with self._connect() as client:
             for args in _new_snapshot_args(name):
                 client.exec_command(' '.join(args))
@@ -224,7 +220,7 @@ class SshTarget(Target):
 
         :return: str
         """
-        return '%s@%s:%d/%s/latest' % (self.user, self.host, self.port, self.path)
+        return '%s@%s:%d%s/latest' % (self.user, self.host, self.port, self.path)
 
 
 class FirstAvailableTarget(Target):
@@ -252,10 +248,10 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target().to_rsync()
 
-    def snapshot(self, name=None):
+    def snapshot(self, name):
         """Create a new snapshot.
 
-        :param name: Optional[str]
+        :param name: str
         """
         return self._get_available_target().snapshot(name)
 

@@ -2,6 +2,7 @@
 import subprocess
 
 from backuppy.config import Configuration
+from backuppy.location import new_snapshot_name
 
 
 def backup(configuration):
@@ -26,7 +27,8 @@ def backup(configuration):
 
     notifier.inform('Backing up %s...' % configuration.name)
 
-    target.snapshot()
+    snapshot_name = new_snapshot_name()
+    target.snapshot(snapshot_name)
 
     args = ['rsync', '-ar', '--numeric-ids']
     if configuration.verbose:
