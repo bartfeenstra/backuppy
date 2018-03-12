@@ -8,7 +8,7 @@ from time import strftime, gmtime
 
 import paramiko
 import six
-from paramiko import SSHException
+from paramiko import SSHException, RejectPolicy
 
 
 def new_snapshot_name():
@@ -184,7 +184,7 @@ class SshTarget(Target):
         """
         client = paramiko.SSHClient()
         client.load_system_host_keys()
-        client.set_missing_host_key_policy(paramiko.WarningPolicy())
+        client.set_missing_host_key_policy(RejectPolicy())
         client.connect(self._host, self._port, self._user, timeout=9)
         return client
 
