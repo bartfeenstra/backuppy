@@ -51,6 +51,7 @@ def main(args):
     subprocess.call(['git', 'tag', version], cwd=project_path)
 
     # Build and publish the package.
+    subprocess.call(['python', 'setup.py', 'sdist'], cwd=project_path)
     subprocess.call(['python', 'setup.py', 'bdist_wheel', '--universal'], cwd=project_path)
     subprocess.call(['twine', 'upload', './dist/*'], cwd=project_path)
 
