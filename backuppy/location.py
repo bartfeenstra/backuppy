@@ -25,7 +25,14 @@ def _new_snapshot_args(name):
     :return: Iterable[Iterable[str]]
     """
     return [
-        ['mkdir', name],
+        # If the given snapshot does not exist, prepopulate the new snapshot with an archived, linked, recursive copy of
+        # the previous snapshot if it exists, or create a new, empty snapshot otherwise.
+        ['bash', '-c', '[ ! -d %s ] && [ -d latest ] && cp -al `readlink latest` %s' % (name, name)],
+
+        # Create the new snapshot directory if it does not exist.
+        ['bash', '-c', '[ ! -d %s ] && mkdir %s' % (name, name)],
+
+        # Re-link the `./latest` symlink.
         ['rm', '-f', 'latest'],
         ['ln', '-s', name, 'latest'],
     ]
@@ -61,8 +68,11 @@ class Target(Location):
     """Provide a backup target."""
 
     @abc.abstractmethod
-    def snapshot(self):
-        """Create a new snapshot."""
+    def snapshot(self, name):
+        """Create a new snapshot.
+
+        :param name: str
+        """
         pass
 
 
@@ -117,13 +127,13 @@ class PathTarget(Target, PathLocation):
         """
         return '/'.join([self.path, 'latest'])
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        snapshot_name = new_snapshot_name()
-        for args in _new_snapshot_args(snapshot_name):
-            code = subprocess.call(args, cwd=self._path)
-            if 0 != code:
-                raise RuntimeError('Could not create snapshot at %s.' % self._path)
+    def snapshot(self, name):
+        """Create a new snapshot.
+
+        :param name: str
+        """
+        for args in _new_snapshot_args(name):
+            subprocess.call(args, cwd=self._path)
 
 
 class SshTarget(Target):
@@ -158,11 +168,13 @@ class SshTarget(Target):
             self._notifier.alert('The remote timed out.')
             return False
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        snapshot_name = new_snapshot_name()
+    def snapshot(self, name):
+        """Create a new snapshot.
+
+        :param name: str
+        """
         with self._connect() as client:
-            for args in _new_snapshot_args(snapshot_name):
+            for args in _new_snapshot_args(name):
                 client.exec_command(' '.join(args))
 
     def _connect(self):
@@ -213,7 +225,7 @@ class SshTarget(Target):
 
         :return: str
         """
-        return '%s@%s:%d/%s/latest' % (self.user, self.host, self.port, self.path)
+        return '%s@%s:%d%s/latest' % (self.user, self.host, self.port, self.path)
 
 
 class FirstAvailableTarget(Target):
@@ -241,9 +253,12 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target().to_rsync()
 
-    def snapshot(self):
-        """Create a new snapshot."""
-        return self._get_available_target().snapshot()
+    def snapshot(self, name):
+        """Create a new snapshot.
+
+        :param name: str
+        """
+        return self._get_available_target().snapshot(name)
 
     def _get_available_target(self):
         """Get the first available target.
