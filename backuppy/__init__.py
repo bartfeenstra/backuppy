@@ -9,12 +9,15 @@ def assert_path(test, source_path, target_path):
     :param target_path: str
     :raise: AssertionError
     """
-    for source_dir_path, child_dir_names, child_file_names in os.walk(source_path):
-        target_dir_path = target_path + source_dir_path[len(source_path):]
-        for child_file_name in child_file_names:
-            with open(os.path.join(source_dir_path, child_file_name)) as source_f:
-                with open(os.path.join(target_dir_path, child_file_name)) as target_f:
-                    assert_file(test, source_f, target_f)
+    try:
+        for source_dir_path, child_dir_names, child_file_names in os.walk(source_path):
+            target_dir_path = target_path + source_dir_path[len(source_path):]
+            for child_file_name in child_file_names:
+                with open(os.path.join(source_dir_path, child_file_name)) as source_f:
+                    with open(os.path.join(target_dir_path, child_file_name)) as target_f:
+                        assert_file(test, source_f, target_f)
+    except Exception:
+        raise AssertionError('The paths `%` and `%s` and their contents are not equal.')
 
 
 def assert_file(test, source_f, target_f):
