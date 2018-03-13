@@ -35,9 +35,133 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-### Configuration file
-Configuration files are written in YAML or JSON, and can be stored anywhere as `*.yml`, `*.yaml`, or `*.json`.
-[View example](./backuppy/tests/resources/configuration/backuppy.json).
+### Configuration
+Configuration is written in [YAML](https://en.wikipedia.org/wiki/YAML) or [JSON](https://en.wikipedia.org/wiki/JSON),
+and can be stored anywhere as `*.yml`, `*.yaml`, or `*.json` files. An example of the smallest possible configuration
+file:
+```yaml
+source:
+  type: path
+  configuration:
+    path: ./source
+target:
+  type: path
+  configuration:
+    path: ./target
+```
+
+To tweak Backuppy's output:
+```yaml
+# An optional human-readable name for this back-up. It will default to the configuration file name.
+name: Test
+# Whether or not to generate verbose output. Defaults to `false`.
+verbose: true
+```
+
+Backuppy supports plugins for back-up source and target locations, as well as notifications.
+
+To configure a local path-based target:
+```yaml
+type: path
+configuration:
+  # The local path to the target directory. If the path is relative, it will be resolved against the location of
+  # the configuration file.
+  path: ./target
+```
+
+To configure a remote target over SSH:
+```yaml
+type: ssh
+configuration:
+  # The host to connect to.
+  host: example.com
+  # The SSH port to use. Defaults to 22.
+  port: 22
+  # The name of the user on the remote system to log in as.
+  user: bart
+  # The absolute path to the target directory on the remote. 
+  path: /home/bart/target
+```
+The SSH key must have been accepted already, and the host must support Bash.
+
+To specify multiple routes to the same target, such as one over a local network mount, and a fallback over SSH:
+```yaml
+target:
+  type: first_available
+  configuration:
+    targets:
+      - type: path
+        configuration:
+          path: ./target
+      - type: ssh
+        configuration:
+          host: example.com
+          user: bart 
+          path: /home/bart/target
+```
+
+To configure user-facing notifications:
+```yaml
+# An optional list of zero or more notification methods. Message types are:
+# - "state": unimportant, mass-generated, or debugging output which may be ignored.
+# - "inform": informative messages, such as those marking the start of an action.
+# - "confirm": confirmation messages, such as those marking the successful completion of an action.
+# - "alert": important messages that warrant someone's attention, such as in case of errors.
+notifications: []
+```
+
+To display notifications to stdout and stderr (terminal output):
+```yaml
+notifications:
+  - type: stdio
+```
+
+To display notifications using `notify-send`:
+```yaml
+notifications:
+  - type: notify-send
+```
+
+To process notifications through custom CLI commands:
+```yaml
+notifications:
+  - type: command
+    # Commands are specified as CLI arguments. `fallback` is required if any of the others are missing.
+    configuration:
+      state:
+        - echo
+        - "{message}"
+      inform:
+        - echo
+        - "{message}"
+      confirm:
+        - echo
+        - "{message}"
+      alert:
+        - echo
+        - "{message}"
+      fallback:
+        - echo
+        - "{message}"
+```
+
+To append notifications to files:
+```yaml
+notifications:
+  - type: file
+    # Paths must be absolute. `fallback` is required if any of the others are missing.
+    configuration:
+      state:
+        - /var/log/backuppy
+      inform:
+        - /var/log/backuppy
+      confirm:
+        - /var/log/backuppy
+      alert:
+        - /var/log/backuppy
+      fallback:
+        - /var/log/backuppy
+```
 
 ## Development
 

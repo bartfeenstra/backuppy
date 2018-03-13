@@ -1,0 +1,14 @@
+{
+  "source": {
+    "type": "path",
+    "configuration": {
+      "path": "./source"
+    }
+  },
+  "target": {
+    "type": "path",
+    "configuration": {
+      "path": "./target"
+    }
+  }
+}
