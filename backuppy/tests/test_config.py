@@ -23,6 +23,11 @@ class ConfigurationTest(TestCase):
         sut = Configuration('Foo', working_directory=CONFIGURATION_PATH)
         self.assertEquals(sut.working_directory, CONFIGURATION_PATH)
 
+    def test_without_working_directory(self):
+        sut = Configuration('Foo')
+        with self.assertRaises(AttributeError):
+            sut.working_directory
+
     def test_name_with_name(self):
         name = 'Foo'
         sut = Configuration(name)
@@ -60,6 +65,11 @@ class ConfigurationTest(TestCase):
 
 
 class FromConfigurationData(TestCase):
+    def test_minimal(self):
+        with open('%s/backuppy-minimal.json' % CONFIGURATION_PATH) as f:
+            configuration = from_configuration_data(f.name, json.load(f))
+            self.assertIsInstance(configuration, Configuration)
+
     def test_verbose_non_boolean(self):
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
             configuration = json.load(f)
