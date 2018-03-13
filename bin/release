@@ -1,7 +1,59 @@
-#!/usr/bin/env python
-import sys
+#! /usr/bin/env bash
 
-from backuppy.cli.release import main
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+cd `dirname "$0"`/..
+
+if [ "$#" -ne 1 ]
+then
+  echo "This command takes a single argument, which is the version to release."
+  exit 1
+fi
+
+VERSION=$1
+BRANCH=release-$VERSION
+
+# Check we are releasing a valid Semantic Version.
+if [[ ! $VERSION =~ ^[0-9]{1,}\.[0-9]{1,}\.[0-9]{1,}$ ]]; then
+    echo "$VERSION is not a valid Semantic Version (x.y.z). See https://semver.org/."
+    exit 1
+fi
+
+# Check this version does not already exist.
+git tag | grep -q ^$VERSION$
+if [ $? -eq 0 ]; then
+    echo "Version $VERSION already exists."
+    exit 1
+fi
+
+# Check there are no uncommitted changes.
+git diff-index --quiet HEAD --
+if [ $? -ne 0 ]; then
+    echo 'The Git repository has uncommitted changes.'
+    exit 1
+fi
+
+# Prepare the workspace directories.
+rm -rf backuppy.egg-info build dist
+
+# Create the release branch.
+git checkout -b branch
+
+# Commit the release to Git.
+echo $VERSION > VERSION
+git add VERSION
+git commit -m "Release version $VERSION."
+git tag $VERSION
+
+# Build and publish the package.
+python setup.py sdist
+python setup.py bdist_wheel --universal
+twine upload ./dist/*
+
+# Revert back to a development state.
+git revert --no-edit HEAD
+
+# Push changes.
+git push --set-upstream origin $BRANCH
+git push --tags
+
+echo "Finalize the $VERSION release by approving and merging its pull request at https://github.com/bartfeenstra/backuppy/compare/release-$VERSION?expand=1"
