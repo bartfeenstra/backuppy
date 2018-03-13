@@ -1,4 +1,5 @@
 import json
+from logging import Logger
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
@@ -63,6 +64,11 @@ class ConfigurationTest(TestCase):
         with self.assertRaises(AttributeError):
             sut.target = target
 
+    def test_logger(self):
+        sut = Configuration('Foo')
+        logger = sut.logger
+        self.assertIsInstance(logger, Logger)
+
 
 class FromConfigurationData(TestCase):
     def test_minimal(self):
@@ -123,6 +129,34 @@ class FromConfigurationData(TestCase):
             json.dump(configuration, f)
             with self.assertRaises(ValueError):
                 from_configuration_data(f.name, configuration)
+
+    def test_logging(self):
+        with NamedTemporaryFile(mode='w+t') as log_f:
+            with open('%s/backuppy.json' % CONFIGURATION_PATH) as original_configuration_f:
+                configuration = json.load(original_configuration_f)
+            configuration['logging'] = {
+                'version': 1,
+                'handlers': {
+                    __name__: {
+                        'class': 'logging.FileHandler',
+                        'filename': log_f.name,
+                    },
+                },
+                'loggers': {
+                    'backuppy': {
+                        'handlers': [__name__],
+                    },
+                },
+            }
+            with NamedTemporaryFile(mode='w+t') as configuration_f:
+                json.dump(configuration, configuration_f)
+                configuration = from_configuration_data(configuration_f.name, configuration)
+                logger = configuration.logger
+                message = 'Something happened!'
+                logger.critical(message)
+                log_f.seek(0)
+                log = log_f.read().strip()
+                self.assertEquals(log, message)
 
 
 class FromJsonTest(TestCase):

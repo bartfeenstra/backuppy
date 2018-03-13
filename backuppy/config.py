@@ -1,6 +1,8 @@
 """Provides configuration components."""
 import json
 import os
+from logging import getLogger
+from logging.config import dictConfig
 
 import yaml
 
@@ -16,6 +18,7 @@ class Configuration(object):
         """Initialize a new instance.
 
         :param name: str
+        :param logger: logging.Logger
         :param working_directory: str
         :param verbose: bool
         """
@@ -25,6 +28,7 @@ class Configuration(object):
         self._source = None
         self._target = None
         self._notifier = None
+        self._logger = getLogger('backuppy')
 
     @property
     def verbose(self):
@@ -119,6 +123,14 @@ class Configuration(object):
             raise AttributeError('A target has already been set.')
         self._target = target
 
+    @property
+    def logger(self):
+        """Get the logger.
+
+        :return: logging.Logger
+        """
+        return self._logger
+
 
 def from_configuration_data(configuration_file_path, data):
     """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
@@ -129,6 +141,8 @@ def from_configuration_data(configuration_file_path, data):
     :raise: ValueError
     """
     name = data['name'] if 'name' in data else configuration_file_path
+    if 'logging' in data:
+        dictConfig(data['logging'])
     working_directory = os.path.dirname(configuration_file_path)
     verbose = False
     if 'verbose' in data:
@@ -136,7 +150,7 @@ def from_configuration_data(configuration_file_path, data):
             raise ValueError('`verbose` must be a boolean.')
         verbose = data['verbose']
 
-    configuration = Configuration(working_directory, name, verbose)
+    configuration = Configuration(name, working_directory, verbose)
 
     configuration.notifier = GroupedNotifiers()
     if 'notifications' in data:
