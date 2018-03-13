@@ -23,14 +23,16 @@ In any Python environment, run `pip install backuppy`.
 ### Command line
 ```bash
 $ backuppy --help
-usage: backuppy [-h] -c CONFIGURATION
+usage: backuppy [-h] {backup} ...
 
-Backs up your data.
+Backuppy backs up and restores your data using rsync.
+
+positional arguments:
+  {backup}
+    backup    Starts a back-up.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -c CONFIGURATION, --configuration CONFIGURATION
-                        The path to the back-up configuration file.
+  -h, --help  show this help message and exit
 ```
 
 ### Configuration file
