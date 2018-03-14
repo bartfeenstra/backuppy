@@ -4,12 +4,12 @@ from unittest import TestCase
 from parameterized import parameterized
 
 try:
-    from unittest.mock import patch, Mock
+    from unittest.mock import patch, Mock, call
 except ImportError:
-    from mock import patch, Mock
+    from mock import patch, Mock, call
 
 from backuppy.notifier import NotifySendNotifier, GroupedNotifiers, CommandNotifier, FileNotifier, QuietNotifier, \
-    Notifier
+    Notifier, StdioNotifier
 
 
 class GroupedNotifiersTest(TestCase):
@@ -311,3 +311,33 @@ class QuietNotifierTest(TestCase):
         message = 'Something happened!'
         sut.alert(message)
         notifier.alert.assert_called_with(message)
+
+
+class StdioNotifierTest(TestCase):
+
+    @parameterized.expand([
+        ('state', 7),
+        ('inform', 6),
+        ('confirm', 2),
+    ])
+    @patch('sys.stdout')
+    def test_state(self, message_type, color, m):
+        sut = StdioNotifier()
+        message = 'Something happened!'
+        getattr(sut, message_type)(message)
+        bg_color = color + 40
+        fg_color = color + 30
+        m.write.assert_has_calls([
+            call('\x1b[0;%dm  \x1b[0;1;%dm %s\x1b[0m' % (bg_color, fg_color, message), ),
+            call('\n', ),
+        ])
+
+    @patch('sys.stderr')
+    def test_alert(self, m):
+        sut = StdioNotifier()
+        message = 'Something happened!'
+        sut.alert(message)
+        m.write.assert_has_calls([
+            call('\x1b[0;41m  \x1b[0;1;31m %s\x1b[0m' % message, ),
+            call('\n', ),
+        ])
