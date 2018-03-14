@@ -253,3 +253,21 @@ class StdioNotifier(Notifier):
         :param message: str
         """
         self._print(message, 1, sys.stderr)
+
+
+class QuietNotifier(Notifier):
+    """Provide a quiet notifier that only lets alerts pass through."""
+
+    def __init__(self, notifier):
+        """Initialize a new instance.
+
+        :param notifier: Notifier
+        """
+        self._notifier = notifier
+
+    def alert(self, message):
+        """Send an error notification.
+
+        :param message: str
+        """
+        self._notifier.alert(message)
