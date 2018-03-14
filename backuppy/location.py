@@ -79,12 +79,14 @@ class Target(Location):
 class PathLocation(Location):
     """Provide a local, path-based backup location."""
 
-    def __init__(self, notifier, path):
+    def __init__(self, logger, notifier, path):
         """Initialize a new instance.
 
+        :param logger: logging.Logger
         :param notifier: Notifier
         :param path: str
         """
+        self._logger = logger
         self._notifier = notifier
         self._path = path
 
@@ -95,7 +97,9 @@ class PathLocation(Location):
         """
         if os.path.exists(self.path):
             return True
-        self._notifier.alert('Path `%s` does not exist.' % self._path)
+        message = 'Path `%s` does not exist.' % self._path
+        self._logger.debug(message)
+        self._notifier.alert(message)
 
     @property
     def path(self):

@@ -1,6 +1,7 @@
 """Provides configuration components."""
 import json
 import os
+from logging import getLogger, config as logging_config
 
 import yaml
 
@@ -16,6 +17,7 @@ class Configuration(object):
         """Initialize a new instance.
 
         :param name: str
+        :param logger: logging.Logger
         :param working_directory: str
         :param verbose: bool
         """
@@ -25,6 +27,7 @@ class Configuration(object):
         self._source = None
         self._target = None
         self._notifier = None
+        self._logger = getLogger('backuppy')
 
     @property
     def verbose(self):
@@ -127,6 +130,14 @@ class Configuration(object):
             raise AttributeError('A target has already been set.')
         self._target = target
 
+    @property
+    def logger(self):
+        """Get the logger.
+
+        :return: logging.Logger
+        """
+        return self._logger
+
 
 def from_configuration_data(configuration_file_path, data, verbose=None):
     """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
@@ -143,8 +154,10 @@ def from_configuration_data(configuration_file_path, data, verbose=None):
         if not isinstance(data['verbose'], bool):
             raise ValueError('`verbose` must be a boolean.')
         verbose = data['verbose']
+    configuration = Configuration(name, working_directory, verbose)
 
-    configuration = Configuration(working_directory, name, verbose)
+    if 'logging' in data:
+        logging_config.dictConfig(data['logging'])
 
     notifier = GroupedNotifiers()
     if 'notifications' in data:

@@ -1,6 +1,7 @@
 import os
 import socket
 import subprocess
+from logging import getLogger
 from unittest import TestCase
 
 from paramiko import SSHException
@@ -38,38 +39,43 @@ class PathLocationTest(TestCase):
             pass
 
     def test_is_available(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
         path = '/tmp'
-        sut = self.PathLocation(notifier, path)
+        sut = self.PathLocation(logger, notifier, path)
         self.assertTrue(sut.is_available())
 
     def test_is_available_unavailable(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
         path = '/tmp/SomeNoneExistentPath'
-        sut = self.PathLocation(notifier, path)
+        sut = self.PathLocation(logger, notifier, path)
         self.assertFalse(sut.is_available())
 
 
 class PathTargetTest(TestCase):
     def test_to_rsync(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
         path = '/var/cache'
-        sut = PathTarget(notifier, path)
+        sut = PathTarget(logger, notifier, path)
         self.assertEquals(sut.to_rsync(), '/var/cache/latest')
 
     def test_snapshot_without_name(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
         with TemporaryDirectory() as path:
-            sut = PathTarget(notifier, path)
+            sut = PathTarget(logger, notifier, path)
             sut.snapshot('foo')
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
 
     def test_snapshot_should_rebuild_latest_symlink(self):
         snapshot_1_name = 'foo-bar'
         snapshot_2_name = 'BAZ_QUX'
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
         with TemporaryDirectory() as path:
-            sut = PathTarget(notifier, path)
+            sut = PathTarget(logger, notifier, path)
             sut.snapshot(snapshot_1_name)
             sut.snapshot(snapshot_2_name)
             latest_snapshot_path = subprocess.check_output(['readlink', '-f', '/'.join([path, 'latest'])]).decode(
@@ -145,10 +151,11 @@ class SshTargetTest(TestCase):
 
 class FirstAvailableTargetTest(TestCase):
     def test_to_rsync(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
-        target_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
-        target_2 = PathTarget(notifier, '/tmp')
-        target_3 = PathTarget(notifier, '/tmp')
+        target_1 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
+        target_2 = PathTarget(logger, notifier, '/tmp')
+        target_3 = PathTarget(logger, notifier, '/tmp')
         sut = FirstAvailableTarget([target_1, target_2, target_3])
         self.assertEquals(sut.to_rsync(), target_2.to_rsync())
         # Try again, so we cover the SUT's internal static cache.
@@ -156,10 +163,11 @@ class FirstAvailableTargetTest(TestCase):
 
     def test_snapshot(self):
         snapshot_name = 'Foo_BAR'
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
-        target_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        target_1 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
         target_2 = Mock(PathTarget)
-        target_3 = PathTarget(notifier, '/tmp')
+        target_3 = PathTarget(logger, notifier, '/tmp')
         sut = FirstAvailableTarget([target_1, target_2, target_3])
         sut.snapshot(snapshot_name)
         target_2.snapshot.assert_called_with(snapshot_name)
@@ -168,20 +176,22 @@ class FirstAvailableTargetTest(TestCase):
         target_2.snapshot.assert_called_with(snapshot_name)
 
     def test_is_available(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
-        target_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
-        target_2 = PathTarget(notifier, '/tmp')
-        target_3 = PathTarget(notifier, '/tmp')
+        target_1 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
+        target_2 = PathTarget(logger, notifier, '/tmp')
+        target_3 = PathTarget(logger, notifier, '/tmp')
         sut = FirstAvailableTarget([target_1, target_2, target_3])
         self.assertTrue(sut.is_available())
         # Try again, so we cover the SUT's internal static cache.
         self.assertTrue(sut.is_available())
 
     def test_is_available_unavailable(self):
+        logger = getLogger(__name__)
         notifier = Mock(Notifier)
-        target_1 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
-        target_2 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
-        target_3 = PathTarget(notifier, '/tmp/SomeNoneExistentPath')
+        target_1 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
+        target_2 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
+        target_3 = PathTarget(logger, notifier, '/tmp/SomeNoneExistentPath')
         sut = FirstAvailableTarget([target_1, target_2, target_3])
         self.assertFalse(sut.is_available())
         # Try again, so we cover the SUT's internal static cache.

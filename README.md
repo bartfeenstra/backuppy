@@ -56,6 +56,11 @@ To tweak Backuppy's output:
 name: Test
 # Whether or not to generate verbose output. Defaults to `false`.
 verbose: true
+# Python logging configuration. This is specific to the Python version you are using. Defaults to `null` for no logging.
+# See https://docs.python.org/3.6/library/logging.config.html#logging-config-dictschema.
+logging_configuration:
+  version: 1
+  # ...additional logger and handler configuration.
 ```
 
 Backuppy supports plugins for back-up source and target locations, as well as notifications.

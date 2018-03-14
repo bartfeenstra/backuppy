@@ -1,4 +1,5 @@
 import json
+from logging import Logger
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
@@ -7,9 +8,9 @@ from backuppy.notifier import Notifier
 from backuppy.tests import CONFIGURATION_PATH
 
 try:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock
+    from mock import Mock, patch
 
 from backuppy.config import Configuration, from_json, from_yaml, from_configuration_data
 
@@ -64,6 +65,11 @@ class ConfigurationTest(TestCase):
         self.assertEquals(sut.target, target)
         with self.assertRaises(AttributeError):
             sut.target = target
+
+    def test_logger(self):
+        sut = Configuration('Foo')
+        logger = sut.logger
+        self.assertIsInstance(logger, Logger)
 
 
 class FromConfigurationData(TestCase):
@@ -125,6 +131,27 @@ class FromConfigurationData(TestCase):
             json.dump(configuration, f)
             with self.assertRaises(ValueError):
                 from_configuration_data(f.name, configuration)
+
+    @patch('logging.config.dictConfig')
+    def test_logging(self, m):
+        with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
+            configuration_data = json.load(f)
+            configuration_data['logging'] = {
+                'version': 1,
+                'handlers': {
+                    __name__: {
+                        'class': 'logging.FileHandler',
+                        'filename': '/tmp/foo',
+                    },
+                },
+                'loggers': {
+                    'backuppy': {
+                        'handlers': [__name__],
+                    },
+                },
+            }
+        from_configuration_data(f.name, configuration_data)
+        m.assert_called_with(configuration_data['logging'])
 
 
 class FromJsonTest(TestCase):

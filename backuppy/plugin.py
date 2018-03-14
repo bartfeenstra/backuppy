@@ -36,7 +36,7 @@ def _new_path_location_from_configuration_data(cls, configuration, configuration
         path_data = '%s/%s' % (configuration.working_directory, path_data)
     path = path_data
 
-    return cls(configuration.notifier, path)
+    return cls(configuration.logger, configuration.notifier, path)
 
 
 def _discover_source_types():
