@@ -1,7 +1,8 @@
 """Provides configuration components."""
 import json
+import logging
 import os
-from logging import getLogger, config as logging_config
+from logging import config as logging_config
 
 import yaml
 
@@ -27,7 +28,7 @@ class Configuration(object):
         self._source = None
         self._target = None
         self._notifier = None
-        self._logger = getLogger('backuppy')
+        self._logger = logging.getLogger('backuppy')
 
     @property
     def verbose(self):
