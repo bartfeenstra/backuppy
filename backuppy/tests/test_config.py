@@ -8,9 +8,9 @@ from backuppy.notifier import Notifier
 from backuppy.tests import CONFIGURATION_PATH
 
 try:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock
+    from mock import Mock, patch
 
 from backuppy.config import Configuration, from_json, from_yaml, from_configuration_data
 
@@ -132,16 +132,16 @@ class FromConfigurationData(TestCase):
             with self.assertRaises(ValueError):
                 from_configuration_data(f.name, configuration)
 
-    def test_logging(self):
-        with NamedTemporaryFile(mode='w+t') as log_f:
-            with open('%s/backuppy.json' % CONFIGURATION_PATH) as original_configuration_f:
-                configuration = json.load(original_configuration_f)
-            configuration['logging'] = {
+    @patch('logging.config.dictConfig')
+    def test_logging(self, m):
+        with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
+            configuration_data = json.load(f)
+            configuration_data['logging'] = {
                 'version': 1,
                 'handlers': {
                     __name__: {
                         'class': 'logging.FileHandler',
-                        'filename': log_f.name,
+                        'filename': '/tmp/foo',
                     },
                 },
                 'loggers': {
@@ -150,15 +150,8 @@ class FromConfigurationData(TestCase):
                     },
                 },
             }
-            with NamedTemporaryFile(mode='w+t') as configuration_f:
-                json.dump(configuration, configuration_f)
-                configuration = from_configuration_data(configuration_f.name, configuration)
-                logger = configuration.logger
-                message = 'Something happened!'
-                logger.critical(message)
-                log_f.seek(0)
-                log = log_f.read().strip()
-                self.assertEquals(log, message)
+        from_configuration_data(f.name, configuration_data)
+        m.assert_called_with(configuration_data['logging'])
 
 
 class FromJsonTest(TestCase):

@@ -1,8 +1,7 @@
 """Provides configuration components."""
 import json
 import os
-from logging import getLogger
-from logging.config import dictConfig
+from logging import getLogger, config as logging_config
 
 import yaml
 
@@ -150,15 +149,15 @@ def from_configuration_data(configuration_file_path, data, verbose=None):
     :raise: ValueError
     """
     name = data['name'] if 'name' in data else configuration_file_path
-    if 'logging' in data:
-        dictConfig(data['logging'])
     working_directory = os.path.dirname(configuration_file_path)
     if verbose is None and 'verbose' in data:
         if not isinstance(data['verbose'], bool):
             raise ValueError('`verbose` must be a boolean.')
         verbose = data['verbose']
-
     configuration = Configuration(name, working_directory, verbose)
+
+    if 'logging' in data:
+        logging_config.dictConfig(data['logging'])
 
     notifier = GroupedNotifiers()
     if 'notifications' in data:
