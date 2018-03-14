@@ -18,6 +18,8 @@ class ConfigurationTest(TestCase):
     def test_verbose(self):
         sut = Configuration('Foo', verbose=True)
         self.assertTrue(sut.verbose)
+        sut.verbose = False
+        self.assertFalse(sut.verbose)
 
     def test_working_directory(self):
         sut = Configuration('Foo', working_directory=CONFIGURATION_PATH)
