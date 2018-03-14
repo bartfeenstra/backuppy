@@ -1,12 +1,15 @@
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
+from parameterized import parameterized
+
 try:
     from unittest.mock import patch, Mock
 except ImportError:
     from mock import patch, Mock
 
-from backuppy.notifier import NotifySendNotifier, GroupedNotifiers, CommandNotifier, FileNotifier
+from backuppy.notifier import NotifySendNotifier, GroupedNotifiers, CommandNotifier, FileNotifier, QuietNotifier, \
+    Notifier
 
 
 class GroupedNotifiersTest(TestCase):
@@ -287,3 +290,24 @@ class FileNotifierTest(TestCase):
                 with NamedTemporaryFile(mode='a+t') as confirm_file:
                     with self.assertRaises(ValueError):
                         FileNotifier(state_file=state_file, inform_file=inform_file, confirm_file=confirm_file)
+
+
+class QuietNotifierTest(TestCase):
+    @parameterized.expand([
+        ('state',),
+        ('inform',),
+        ('confirm',),
+    ])
+    def test_non_alert_should_not_pass(self, mesage_type):
+        notifier = Mock(Notifier)
+        sut = QuietNotifier(notifier)
+        message = 'Something happened!'
+        getattr(sut, mesage_type)(message)
+        getattr(notifier, mesage_type).assert_not_called()
+
+    def test_alert_should_pass(self):
+        notifier = Mock(Notifier)
+        sut = QuietNotifier(notifier)
+        message = 'Something happened!'
+        sut.alert(message)
+        notifier.alert.assert_called_with(message)

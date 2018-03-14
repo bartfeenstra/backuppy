@@ -7,7 +7,7 @@ from logging.config import dictConfig
 import yaml
 
 from backuppy.location import Source, Target
-from backuppy.notifier import GroupedNotifiers, Notifier
+from backuppy.notifier import GroupedNotifiers, Notifier, QuietNotifier
 from backuppy.plugin import new_source, new_target, new_notifier
 
 
@@ -37,6 +37,14 @@ class Configuration(object):
         :return: bool
         """
         return self._verbose
+
+    @verbose.setter
+    def verbose(self, verbose):
+        """Set output verbosity.
+
+        :param verbose: bool
+        """
+        self._verbose = verbose
 
     @property
     def name(self):
@@ -132,11 +140,12 @@ class Configuration(object):
         return self._logger
 
 
-def from_configuration_data(configuration_file_path, data):
+def from_configuration_data(configuration_file_path, data, verbose=None):
     """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
     :param configuration_file_path: str
     :param data: dict
+    :param verbose: Optional[bool]
     :return: cls
     :raise: ValueError
     """
@@ -144,21 +153,23 @@ def from_configuration_data(configuration_file_path, data):
     if 'logging' in data:
         dictConfig(data['logging'])
     working_directory = os.path.dirname(configuration_file_path)
-    verbose = False
-    if 'verbose' in data:
+    if verbose is None and 'verbose' in data:
         if not isinstance(data['verbose'], bool):
             raise ValueError('`verbose` must be a boolean.')
         verbose = data['verbose']
 
     configuration = Configuration(name, working_directory, verbose)
 
-    configuration.notifier = GroupedNotifiers()
+    notifier = GroupedNotifiers()
     if 'notifications' in data:
         for notifier_data in data['notifications']:
             if 'type' not in notifier_data:
                 raise ValueError('`notifiers[][type]` is required.')
             notifier_configuration = notifier_data['configuration'] if 'configuration' in notifier_data else None
-            configuration.notifier.notifiers.append(new_notifier(configuration, notifier_data['type'], notifier_configuration))
+            notifier.notifiers.append(new_notifier(configuration, notifier_data['type'], notifier_configuration))
+    if not configuration.verbose:
+        notifier = QuietNotifier(notifier)
+    configuration.notifier = notifier
 
     if 'source' not in data:
         raise ValueError('`source` is required.')
@@ -177,19 +188,21 @@ def from_configuration_data(configuration_file_path, data):
     return configuration
 
 
-def from_json(f):
+def from_json(f, verbose=None):
     """Parse configuration from a JSON file.
 
     :param f: File
+    :param verbose: Optional[bool]
     :return: Configuration
     """
-    return from_configuration_data(f.name, json.load(f))
+    return from_configuration_data(f.name, json.load(f), verbose=verbose)
 
 
-def from_yaml(f):
+def from_yaml(f, verbose=None):
     """Parse configuration from a YAML file.
 
     :param f: File
+    :param verbose: Optional[bool]
     :return: Configuration
     """
-    return from_configuration_data(f.name, yaml.load(f))
+    return from_configuration_data(f.name, yaml.load(f), verbose=verbose)
