@@ -84,7 +84,7 @@ class CliTest(TestCase):
             args = ['backup', '-c', f.name]
             main(args)
             m_get_logger.assert_called_with('backuppy')
-            m_logger.exception.assert_called()
+            self.assertTrue(m_logger.exception.called)
             m_stderr.write.assert_has_calls([
                 call(
                     '\x1b[0;41m  \x1b[0;1;31m A fatal error occurred. Details have been logged as per your configuration.\x1b[0m'),
