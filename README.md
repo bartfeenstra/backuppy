@@ -58,7 +58,7 @@ name: Test
 verbose: true
 # Python logging configuration. This is specific to the Python version you are using. Defaults to `null` for no logging.
 # See https://docs.python.org/3.6/library/logging.config.html#logging-config-dictschema.
-logging_configuration:
+logging:
   version: 1
   # ...additional logger and handler configuration.
 ```
