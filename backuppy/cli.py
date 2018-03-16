@@ -142,7 +142,7 @@ def ask_option(value_label, options, question=None):
     :return: bool
     """
     if len(options) == 1:
-        return options.keys()[0]
+        return options[0][0]
 
     option = None
     options_labels = []
@@ -251,8 +251,8 @@ def main(args):
         'init', help='Initializes a new back-up configuration.')
     init_parser.set_defaults(func=lambda subparser_cli_args: init())
 
-    cli_args = parser.parse_args(args)
-    if 'func' in cli_args:
+    if args:
+        cli_args = parser.parse_args(args)
         cli_args.func(vars(cli_args))
     else:
         parser.print_help()
