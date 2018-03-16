@@ -4,11 +4,13 @@ from __future__ import absolute_import
 import argparse
 import json
 import re
+from logging import Handler, WARNING
 
 import yaml
 
 from backuppy import task
 from backuppy.config import from_json, from_yaml
+from backuppy.notifier import StdioNotifier
 
 FORMAT_JSON_EXTENSIONS = ('json',)
 FORMAT_YAML_EXTENSIONS = ('yml', 'yaml')
@@ -26,13 +28,30 @@ def _input(prompt=None):
         return input(prompt)
 
 
+class StdioNotifierLoggingHandler(Handler):
+    """Log warnings and more severe records to stdio."""
+
+    def __init__(self):
+        """Initialize a new instance."""
+        Handler.__init__(self, WARNING)
+        self._notifier = StdioNotifier()
+
+    def emit(self, record):
+        """Log a record.
+
+        :param record: logging.LogRecord
+        """
+        self._notifier.alert(self.format(record))
+
+
 class ConfigurationAction(argparse.Action):
     """Provide a Semantic Version action."""
 
     def __init__(self, *args, **kwargs):
         """Initialize a new instance."""
         kwargs.setdefault('required', True)
-        kwargs.setdefault('help', 'The path to the back-up configuration file.')
+        kwargs.setdefault(
+            'help', 'The path to the back-up configuration file.')
         argparse.Action.__init__(self, *args, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -53,6 +72,16 @@ class ConfigurationAction(argparse.Action):
                 raise ValueError(
                     'Configuration files must have *.json, *.yml, or *.yaml extensions.')
             configuration = configuration_factory(f, verbose=verbose)
+
+            # Ensure at least some form of error logging is enabled.
+            logger = configuration.logger
+            logger.disabled = False
+            if logger.getEffectiveLevel() > WARNING:
+                logger.setLevel(WARNING)
+            if not logger.handlers:
+                configuration.notifier.inform(
+                    'The configuration does not specify any logging handlers for "backuppy", so all log records about problems will be displayed here.')
+                logger.addHandler(StdioNotifierLoggingHandler())
 
             setattr(namespace, self.dest, configuration)
 
@@ -89,7 +118,8 @@ def add_backup_command_to_parser(parser):
     :return: argparse.ArgumentParser
     """
     backup_parser = parser.add_parser('backup', help='Starts a back-up.')
-    backup_parser.set_defaults(func=lambda parsed_args: task.backup(parsed_args.configuration))
+    backup_parser.set_defaults(
+        func=lambda parsed_args: task.backup(parsed_args.configuration))
     add_configuration_to_parser(backup_parser)
     return parser
 
@@ -100,7 +130,8 @@ def add_init_command_to_parser(parser):
     :param parser: argparse.ArgumentParser
     :return: argparse.ArgumentParser
     """
-    init_parser = parser.add_parser('init', help='Initializes a new back-up configuration.')
+    init_parser = parser.add_parser(
+        'init', help='Initializes a new back-up configuration.')
     init_parser.set_defaults(func=lambda parsed_args: init())
     return parser
 
@@ -135,7 +166,8 @@ def ask_confirm(value_label, question=None, default=None):
     while confirmation is None:
         if question is not None:
             print(question)
-        confirmation_input = _input('%s %s: ' % (value_label, options_label)).lower()
+        confirmation_input = _input('%s %s: ' % (
+            value_label, options_label)).lower()
         if 'y' == confirmation_input:
             confirmation = True
         elif 'n' == confirmation_input:
@@ -183,7 +215,8 @@ def ask_option(value_label, options, question=None):
 
     option = None
     options_labels = []
-    indexed_options = [(index, value, label) for index, (value, label) in enumerate(options)]
+    indexed_options = [(index, value, label)
+                       for index, (value, label) in enumerate(options)]
     for index, _, option_label in indexed_options:
         options_labels.append('%d) %s' % (index, option_label))
     options_label = '0-%d' % (len(options) - 1)
@@ -212,8 +245,10 @@ def init():
                    required=False)
     verbose = ask_confirm(
         'Verbose output', question='Do you want back-ups to output verbose notifications?', default=True)
-    source_path = ask_any('Source path', question='What is the path to the directory you want to back up?')
-    target_path = ask_any('Target path', question='What is the path to the directory you want to back up your data to?')
+    source_path = ask_any(
+        'Source path', question='What is the path to the directory you want to back up?')
+    target_path = ask_any(
+        'Target path', question='What is the path to the directory you want to back up your data to?')
     format_options = [
         ('yaml', 'YAML (https://en.wikipedia.org/wiki/YAML)'),
         ('json', 'JSON (https://en.wikipedia.org/wiki/JSON)'),
@@ -251,11 +286,13 @@ def init():
     else:
         file_path_extensions = FORMAT_YAML_EXTENSIONS
         formatter = yaml.dump
-    file_path_extensions_label = ', '.join(map(lambda x: '*.' + x, file_path_extensions))
+    file_path_extensions_label = ', '.join(
+        map(lambda x: '*.' + x, file_path_extensions))
 
     def _file_path_validator(path):
         if not any(map(path.endswith, file_path_extensions)):
-            raise ValueError('Configuration files must have %s extensions.' % file_path_extensions_label)
+            raise ValueError(
+                'Configuration files must have %s extensions.' % file_path_extensions_label)
         return path
 
     saved = False
@@ -274,7 +311,8 @@ def init():
 
 def main(args):
     """Provide the CLI entry point."""
-    parser = argparse.ArgumentParser(description='Backuppy backs up and restores your data using rsync.')
+    parser = argparse.ArgumentParser(
+        description='Backuppy backs up and restores your data using rsync.')
     add_commands_to_parser(parser)
 
     if args:
@@ -287,6 +325,7 @@ def main(args):
         except BaseException:
             configuration = parsed_args.configuration
             configuration.logger.exception('A fatal error occurred.')
-            configuration.notifier.alert('A fatal error occurred. Details have been logged as per your configuration.')
+            configuration.notifier.alert(
+                'A fatal error occurred. Details have been logged as per your configuration.')
     else:
         parser.print_help()

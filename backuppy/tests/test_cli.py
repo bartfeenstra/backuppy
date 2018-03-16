@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from logging import Logger
+from logging import Logger, NOTSET
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
@@ -101,15 +101,19 @@ class AskAnyTest(TestCase):
 class CliTest(TestCase):
     def test_help_appears_in_readme(self):
         """Assert that the CLI command's help output in README.md is up-to-date."""
-        cli_help = subprocess.check_output(['backuppy', '--help']).decode('utf-8')
-        readme_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'README.md')
+        cli_help = subprocess.check_output(
+            ['backuppy', '--help']).decode('utf-8')
+        readme_path = os.path.join(os.path.dirname(
+            os.path.dirname(os.path.dirname(__file__))), 'README.md')
         with open(readme_path) as f:
             self.assertIn(cli_help, f.read())
 
     def test_call_without_subcommand_or_arguments_prints_help(self):
         """Assert that the CLI command prints its help if it does not know what to do."""
-        output_with_help = subprocess.check_output(['backuppy', '--help']).decode('utf-8')
-        output_without_arguments = subprocess.check_output(['backuppy']).decode('utf-8')
+        output_with_help = subprocess.check_output(
+            ['backuppy', '--help']).decode('utf-8')
+        output_without_arguments = subprocess.check_output(
+            ['backuppy']).decode('utf-8')
         self.assertEquals(output_without_arguments, output_with_help)
 
 
@@ -158,6 +162,9 @@ class CliBackupTest(TestCase):
     def test_error_in_command(self, error_type, m_get_logger, m_backup, m_stderr, m_stdout):
         m_backup.side_effect = error_type
         m_logger = Mock(Logger)
+        m_logger.handlers = Mock(side_effect=lambda: [])
+        m_logger.getEffectiveLevel.side_effect = Mock(
+            side_effect=lambda: NOTSET)
         m_get_logger.return_value = m_logger
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
             configuration = json.load(f)
@@ -194,9 +201,11 @@ class CliInitTest(TestCase):
         source_path = '/tmp/Foo/Baz_bar_source'
         target_path = '/tmp/Foo/Baz_bar_target'
         with TemporaryDirectory() as working_directory:
-            configuration_file_path = os.path.join(working_directory, 'backuppy.' + format)
+            configuration_file_path = os.path.join(
+                working_directory, 'backuppy.' + format)
             file_path_extensions = FORMAT_YAML_EXTENSIONS if 'yaml' == format else FORMAT_JSON_EXTENSIONS
-            file_path_extensions_label = ', '.join(map(lambda x: '*.' + x, file_path_extensions))
+            file_path_extensions_label = ', '.join(
+                map(lambda x: '*.' + x, file_path_extensions))
             m_input.side_effect = lambda *args: {
                 ('Name: ',): name,
                 ('Verbose output [Y/n]: ',): 'y' if verbose else 'n',

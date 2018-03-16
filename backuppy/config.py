@@ -166,7 +166,8 @@ def from_configuration_data(configuration_file_path, data, verbose=None):
             if 'type' not in notifier_data:
                 raise ValueError('`notifiers[][type]` is required.')
             notifier_configuration = notifier_data['configuration'] if 'configuration' in notifier_data else None
-            notifier.notifiers.append(new_notifier(configuration, notifier_data['type'], notifier_configuration))
+            notifier.notifiers.append(new_notifier(
+                configuration, notifier_data['type'], notifier_configuration))
     if not configuration.verbose:
         notifier = QuietNotifier(notifier)
     configuration.notifier = notifier
@@ -176,14 +177,16 @@ def from_configuration_data(configuration_file_path, data, verbose=None):
     if 'type' not in data['source']:
         raise ValueError('`source[type]` is required.')
     source_configuration = data['source']['configuration'] if 'configuration' in data['source'] else None
-    configuration.source = new_source(configuration, data['source']['type'], source_configuration)
+    configuration.source = new_source(
+        configuration, data['source']['type'], source_configuration)
 
     if 'target' not in data:
         raise ValueError('`target` is required.')
     if 'type' not in data['target']:
         raise ValueError('`target[type]` is required.')
     target_configuration = data['target']['configuration'] if 'configuration' in data['target'] else None
-    configuration.target = new_target(configuration, data['target']['type'], target_configuration)
+    configuration.target = new_target(
+        configuration, data['target']['type'], target_configuration)
 
     return configuration
 
