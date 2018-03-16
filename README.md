@@ -51,6 +51,8 @@ target:
     path: ./target
 ```
 
+To create a new back-up configuration without writing code, run `backuppy init` and follow the interactive wizard.
+
 To tweak Backuppy's output:
 ```yaml
 # An optional human-readable name for this back-up. It will default to the configuration file name.
