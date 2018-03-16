@@ -118,7 +118,9 @@ class CliTest(TestCase):
 
 
 class CliBackupTest(TestCase):
-    def test_backup_with_json(self):
+    @patch('sys.stdout')
+    @patch('sys.stderr')
+    def test_backup_with_json(self, m_stdout, m_stderr):
         configuration_file_path = '%s/backuppy.json' % CONFIGURATION_PATH
         args = ['backup', '-c', configuration_file_path]
         main(args)
