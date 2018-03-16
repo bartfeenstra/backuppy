@@ -43,8 +43,10 @@ class BackupTest(TestCase):
             with TemporaryDirectory() as target_path:
                 configuration = Configuration('Foo', verbose=True)
                 configuration.notifier = Mock(Notifier)
-                configuration.source = PathSource(configuration.logger, configuration.notifier, source_path + '/')
-                configuration.target = PathTarget(configuration.logger, configuration.notifier, target_path)
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path + '/')
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path)
 
                 # Back up the first time.
                 result = backup(configuration)
@@ -93,8 +95,10 @@ class BackupTest(TestCase):
             with TemporaryDirectory() as target_path:
                 configuration = Configuration('Foo', verbose=True)
                 configuration.notifier = Mock(Notifier)
-                configuration.source = PathSource(configuration.logger, configuration.notifier, source_path + '/NonExistentPath')
-                configuration.target = PathTarget(configuration.logger, configuration.notifier, target_path)
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path + '/NonExistentPath')
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path)
                 result = backup(configuration)
                 self.assertFalse(result)
 
@@ -105,7 +109,9 @@ class BackupTest(TestCase):
             with TemporaryDirectory() as target_path:
                 configuration = Configuration('Foo', verbose=True)
                 configuration.notifier = Mock(Notifier)
-                configuration.source = PathSource(configuration.logger, configuration.notifier, source_path)
-                configuration.target = PathTarget(configuration.logger, configuration.notifier, target_path + '/NonExistentPath')
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path)
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path + '/NonExistentPath')
                 result = backup(configuration)
                 self.assertFalse(result)

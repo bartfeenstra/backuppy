@@ -30,7 +30,8 @@ def backup(configuration):
     snapshot_name = new_snapshot_name()
     target.snapshot(snapshot_name)
 
-    args = ['rsync', '-ar', '--numeric-ids', '-e', 'ssh -o "StrictHostKeyChecking no"']
+    args = ['rsync', '-ar', '--numeric-ids',
+            '-e', 'ssh -o "StrictHostKeyChecking no"']
     if configuration.verbose:
         args.append('--verbose')
         args.append('--progress')

@@ -83,7 +83,8 @@ class PathTargetTest(TestCase):
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
             self.assertTrue(os.path.exists('/'.join([path, snapshot_1_name])))
             self.assertTrue(os.path.exists('/'.join([path, snapshot_2_name])))
-            self.assertEquals(latest_snapshot_path, '/'.join([path, snapshot_2_name]))
+            self.assertEquals(latest_snapshot_path,
+                              '/'.join([path, snapshot_2_name]))
 
 
 class SshTargetTest(TestCase):
@@ -94,7 +95,8 @@ class SshTargetTest(TestCase):
         port = 666
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
-        self.assertEquals(sut.to_rsync(), 'bart@example.com:666/var/cache/latest')
+        self.assertEquals(
+            sut.to_rsync(), 'bart@example.com:666/var/cache/latest')
 
     @patch('paramiko.SSHClient', autospec=True)
     def test_is_available(self, m):

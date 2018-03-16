@@ -104,7 +104,8 @@ class CommandNotifier(Notifier):
         :param fallback_args: Optional[Iterable[str]]
         """
         if None in [state_args, inform_args, confirm_args, alert_args] and fallback_args is None:
-            raise ValueError('fallback_args must be given if one or more of the other arguments are omitted.')
+            raise ValueError(
+                'fallback_args must be given if one or more of the other arguments are omitted.')
         self._state_args = state_args
         self._inform_args = inform_args
         self._confirm_args = confirm_args
@@ -177,7 +178,8 @@ class FileNotifier(Notifier):
         :param fallback_file: Optional[Iterable[str]]
         """
         if None in [state_file, inform_file, confirm_file, alert_file] and fallback_file is None:
-            raise ValueError('fallback_file must be given if one or more of the other arguments are omitted.')
+            raise ValueError(
+                'fallback_file must be given if one or more of the other arguments are omitted.')
         self._state_file = state_file
         self._inform_file = inform_file
         self._confirm_file = confirm_file
@@ -224,7 +226,8 @@ class StdioNotifier(Notifier):
     def _print(self, message, color, file=None):
         if file is None:
             file = sys.stdout
-        print('\033[0;%dm  \033[0;1;%dm %s\033[0m' % (color + 40, color + 30, message), file=file)
+        print('\033[0;%dm  \033[0;1;%dm %s\033[0m' %
+              (color + 40, color + 30, message), file=file)
 
     def state(self, message):
         """Send a notification that may be ignored.

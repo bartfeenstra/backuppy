@@ -17,7 +17,8 @@ def assert_path(test, source_path, target_path):
                     with open(os.path.join(target_dir_path, child_file_name)) as target_f:
                         assert_file(test, source_f, target_f)
     except Exception:
-        raise AssertionError('The paths `%` and `%s` and their contents are not equal.')
+        raise AssertionError(
+            'The paths `%` and `%s` and their contents are not equal.')
 
 
 def assert_file(test, source_f, target_f):

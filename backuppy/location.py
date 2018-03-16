@@ -27,7 +27,8 @@ def _new_snapshot_args(name):
     return [
         # If the given snapshot does not exist, prepopulate the new snapshot with an archived, linked, recursive copy of
         # the previous snapshot if it exists, or create a new, empty snapshot otherwise.
-        ['bash', '-c', '[ ! -d %s ] && [ -d latest ] && cp -al `readlink latest` %s' % (name, name)],
+        ['bash', '-c', '[ ! -d %s ] && [ -d latest ] && cp -al `readlink latest` %s' %
+            (name, name)],
 
         # Create the new snapshot directory if it does not exist.
         ['bash', '-c', '[ ! -d %s ] && mkdir %s' % (name, name)],
@@ -166,7 +167,8 @@ class SshTarget(Target):
             self._connect()
             return True
         except SSHException:
-            self._notifier.alert('Could not establish an SSH connection to the remote.')
+            self._notifier.alert(
+                'Could not establish an SSH connection to the remote.')
             return False
         except socket.timeout:
             self._notifier.alert('The remote timed out.')
