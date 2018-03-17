@@ -1,24 +1,27 @@
 import os
 
 
-def assert_path(test, source_path, target_path):
-    """Assert two source and target directory paths are identical.
+def assert_path(test, actual_path, expected_path):
+    """Assert two actual and expected directory paths are identical.
 
     :param test: unittest.TestCase
-    :param source_path: str
-    :param target_path: str
+    :param actual_path: str
+    :param expected_path: str
     :raise: AssertionError
     """
+    actual_path = actual_path.rstrip('/') + '/'
+    expected_path = expected_path.rstrip('/') + '/'
     try:
-        for source_dir_path, child_dir_names, child_file_names in os.walk(source_path):
-            target_dir_path = target_path + source_dir_path[len(source_path):]
+        for expected_dir_path, child_dir_names, child_file_names in os.walk(expected_path):
+            actual_dir_path = os.path.join(actual_path, expected_dir_path[len(expected_path):])
             for child_file_name in child_file_names:
-                with open(os.path.join(source_dir_path, child_file_name)) as source_f:
-                    with open(os.path.join(target_dir_path, child_file_name)) as target_f:
-                        assert_file(test, source_f, target_f)
+                with open(os.path.join(expected_dir_path, child_file_name)) as expected_f:
+                    with open(os.path.join(actual_dir_path, child_file_name)) as actual_f:
+                        assert_file(test, actual_f, expected_f)
     except Exception:
         raise AssertionError(
-            'The paths `%` and `%s` and their contents are not equal.')
+            'The actual contents under the path `%s` are not equal to the expected contents under `%s`.' % (
+                actual_path, expected_path))
 
 
 def assert_file(test, source_f, target_f):
