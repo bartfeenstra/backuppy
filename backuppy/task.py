@@ -42,3 +42,40 @@ def backup(configuration):
     notifier.confirm('Back-up %s complete.' % configuration.name)
 
     return True
+
+
+def restore(configuration):
+    """Restores a back-up.
+
+    :param configuration: Configuration
+    """
+    assert isinstance(configuration, Configuration)
+    notifier = configuration.notifier
+    source = configuration.source
+    target = configuration.target
+
+    notifier.state('Initializing restoration of back-up %s' %
+                   configuration.name)
+
+    if not source.is_available():
+        notifier.alert('No back-up source available.')
+        return False
+
+    if not target.is_available():
+        notifier.alert('No back-up target available.')
+        return False
+
+    notifier.inform('Restoring %s...' % configuration.name)
+
+    args = ['rsync', '-ar', '--numeric-ids',
+            '-e', 'ssh -o "StrictHostKeyChecking no"']
+    if configuration.verbose:
+        args.append('--verbose')
+        args.append('--progress')
+    args.append(target.to_rsync())
+    args.append(source.to_rsync())
+    subprocess.call(args)
+
+    notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
+
+    return True

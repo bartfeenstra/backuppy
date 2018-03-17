@@ -111,6 +111,18 @@ def add_verbose_to_args(parser):
     return parser
 
 
+def add_force_to_args(parser):
+    """Add force/non-interactivity options to a parser.
+
+    :param parser: argparse.ArgumentParser
+    :return: argparse.ArgumentParser
+    """
+    parser.add_argument('-f', '--force', dest='force', action='store_true',
+                        help='Do not ask for confirmations to perform possible destructive tasks. This makes the command non-interactive, which is useful for automated scripts.')
+    parser.set_defaults(force=False)
+    return parser
+
+
 def add_backup_command_to_parser(parser):
     """Add the back-up command to a parser.
 
@@ -121,6 +133,20 @@ def add_backup_command_to_parser(parser):
     backup_parser.set_defaults(
         func=lambda parsed_args: task.backup(parsed_args.configuration))
     add_configuration_to_parser(backup_parser)
+    return parser
+
+
+def add_restore_command_to_parser(parser):
+    """Add the restore command to a parser.
+
+    :param parser: argparse.ArgumentParser
+    :return: argparse.ArgumentParser
+    """
+    restore_parser = parser.add_parser('restore', help='Restores a back-up.')
+    restore_parser.set_defaults(
+        func=lambda parsed_args: restore(parsed_args.configuration, parsed_args.force))
+    add_configuration_to_parser(restore_parser)
+    add_force_to_args((restore_parser))
     return parser
 
 
@@ -144,6 +170,7 @@ def add_commands_to_parser(parser):
     """
     subparsers = parser.add_subparsers()
     add_backup_command_to_parser(subparsers)
+    add_restore_command_to_parser(subparsers)
     add_init_command_to_parser(subparsers)
     return parser
 
@@ -306,7 +333,24 @@ def init():
             saved = True
         except BaseException as e:
             print(e)
-    print('Your new back-up configuration has been saved. Start backing up your data by running the following command: backuppy -c %s' % configuration_file_path)
+    print(
+        'Your new back-up configuration has been saved. Start backing up your data by running the following command: backuppy -c %s' % configuration_file_path)
+
+
+def restore(configuration, force=False):
+    """Handle the back-up restoration command.
+
+    :param configuration: Configuration
+    :param force: bool
+    :return: bool
+    """
+    confirm_label = 'Restore my back-up, possibly overwriting newer files.'
+    confirm_question = 'Restoring back-ups may result in (newer) files on the source location being overwritten by (older) files from your back-ups. Confirm that this is indeed your intention.'
+    if not force and not ask_confirm(confirm_label, question=confirm_question):
+        configuration.notifier.confirm('Aborting back-up restoration...')
+        return True
+
+    task.restore(configuration)
 
 
 def main(args):
