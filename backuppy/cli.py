@@ -359,17 +359,20 @@ def main(args):
         description='Backuppy backs up and restores your data using rsync.')
     add_commands_to_parser(parser)
 
-    if args:
-        parsed_args = parser.parse_args(args)
-        try:
-            parsed_args.func(parsed_args)
-        except KeyboardInterrupt:
-            # Quit gracefully.
-            print('Quitting...')
-        except BaseException:
-            configuration = parsed_args.configuration
-            configuration.logger.exception('A fatal error occurred.')
-            configuration.notifier.alert(
-                'A fatal error occurred. Details have been logged as per your configuration.')
-    else:
+    # In Python 2.7, --help is not invoked when no subcommand is given, so we mimic the Python 3 behavior in a
+    # # cross-platform way by invoking the help explicitly if no CLI arguments have been given.
+    if not args:
         parser.print_help()
+        return
+
+    parsed_args = parser.parse_args(args)
+    try:
+        parsed_args.func(parsed_args)
+    except KeyboardInterrupt:
+        # Quit gracefully.
+        print('Quitting...')
+    except BaseException:
+        configuration = parsed_args.configuration
+        configuration.logger.exception('A fatal error occurred.')
+        configuration.notifier.alert(
+            'A fatal error occurred. Details have been logged as per your configuration.')
