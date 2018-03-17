@@ -130,7 +130,7 @@ class PathTarget(Target, PathLocation):
 
         :return: str
         """
-        return '/'.join([self.path, 'latest'])
+        return '/'.join([self.path, 'latest/'])
 
     def snapshot(self, name):
         """Create a new snapshot.

@@ -59,7 +59,7 @@ class PathTargetTest(TestCase):
         notifier = Mock(Notifier)
         path = '/var/cache'
         sut = PathTarget(logger, notifier, path)
-        self.assertEquals(sut.to_rsync(), '/var/cache/latest')
+        self.assertEquals(sut.to_rsync(), '/var/cache/latest/')
 
     def test_snapshot_without_name(self):
         logger = getLogger(__name__)

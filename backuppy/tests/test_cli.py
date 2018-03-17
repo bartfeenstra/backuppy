@@ -117,35 +117,21 @@ class CliTest(TestCase):
         self.assertEquals(output_without_arguments, output_with_help)
 
 
-class CliBackupTest(TestCase):
+class CliRestoreTest(TestCase):
     @patch('sys.stdout')
     @patch('sys.stderr')
-    def test_backup_with_json(self, m_stdout, m_stderr):
-        configuration_file_path = '%s/backuppy.json' % CONFIGURATION_PATH
-        args = ['backup', '-c', configuration_file_path]
-        main(args)
-
-    @patch('sys.stdout')
-    @patch('sys.stderr')
-    def test_backup_with_yaml(self, m_stdout, m_stderr):
-        configuration_file_path = '%s/backuppy.yml' % CONFIGURATION_PATH
-        args = ['backup', '-c', configuration_file_path]
-        main(args)
-
-    @patch('sys.stdout')
-    @patch('sys.stderr')
-    def test_backup_without_arguments(self, m_stdout, m_stderr):
-        args = ['backup']
+    def test_restore_without_arguments(self, m_stdout, m_stderr):
+        args = ['restore']
         with self.assertRaises(SystemExit):
             main(args)
 
     @patch('sys.stdout')
     @patch('sys.stderr')
-    @patch('backuppy.task.backup')
-    def test_keyboard_interrupt_in_command_should_exit_gracefully(self, m_backup, m_stderr, m_stdout):
-        m_backup.side_effect = KeyboardInterrupt
+    @patch('backuppy.task.restore')
+    def test_keyboard_interrupt_in_command_should_exit_gracefully(self, m_restore, m_stderr, m_stdout):
+        m_restore.side_effect = KeyboardInterrupt
         configuration_file_path = '%s/backuppy.json' % CONFIGURATION_PATH
-        args = ['backup', '-c', configuration_file_path]
+        args = ['restore', '-f', '-c', configuration_file_path]
         main(args)
         m_stdout.write.assert_has_calls([call('Quitting...')])
         m_stderr.write.assert_not_called()
@@ -159,10 +145,10 @@ class CliBackupTest(TestCase):
     ])
     @patch('sys.stdout')
     @patch('sys.stderr')
-    @patch('backuppy.task.backup')
+    @patch('backuppy.task.restore')
     @patch('logging.getLogger')
-    def test_error_in_command(self, error_type, m_get_logger, m_backup, m_stderr, m_stdout):
-        m_backup.side_effect = error_type
+    def test_error_in_command(self, error_type, m_get_logger, m_restore, m_stderr, m_stdout):
+        m_restore.side_effect = error_type
         m_logger = Mock(Logger)
         m_logger.handlers = Mock(side_effect=lambda: [])
         m_logger.getEffectiveLevel.side_effect = Mock(
@@ -178,7 +164,7 @@ class CliBackupTest(TestCase):
         with NamedTemporaryFile(mode='w+t', suffix='.json') as f:
             json.dump(configuration, f)
             f.seek(0)
-            args = ['backup', '-c', f.name]
+            args = ['restore', '-f', '-c', f.name]
             main(args)
             m_get_logger.assert_called_with('backuppy')
             self.assertTrue(m_logger.exception.called)
