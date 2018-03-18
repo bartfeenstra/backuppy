@@ -39,6 +39,60 @@ def _new_snapshot_args(name):
     ]
 
 
+class Path(six.with_metaclass(ABCMeta), object):
+    """Define a back-up path."""
+
+    @abc.abstractmethod
+    def __str__(self):
+        """Render the path as a string.
+
+        :return: str
+        """
+        pass
+
+
+class FilePath(Path):
+    """Define a back-up file."""
+
+    def __init__(self, path):
+        """Initialize a new instance.
+
+        :param path: str
+        """
+        if path.endswith('/'):
+            raise ValueError('A file path must not end with a slash (/).')
+        # Paths are always relative against the target root paths.
+        self._path = path.lstrip('/')
+
+    def __str__(self):
+        """Render the path as a string.
+
+        :return: str
+        """
+        return self._path
+
+
+class DirectoryPath(Path):
+    """Define a back-up directory."""
+
+    def __init__(self, path):
+        """Initialize a new instance.
+
+        :param path: str
+        """
+        if not path.endswith('/'):
+            raise ValueError('A directory path must end with a slash (/).')
+        # Paths are always relative against the target root paths.
+        self._path = path.lstrip('/')
+
+    def __str__(self):
+        """Render the path as a string.
+
+        :return: str
+        """
+        return self._path
+
+
 class Location(six.with_metaclass(ABCMeta), object):
     """Provide a backup location."""
 
@@ -51,9 +105,10 @@ class Location(six.with_metaclass(ABCMeta), object):
         pass
 
     @abc.abstractmethod
-    def to_rsync(self):
+    def to_rsync(self, path=None):
         """Build this location's rsync path.
 
+        :param path: Optional[backuppy.location.Path]
         :return: str
         """
         pass
@@ -114,23 +169,32 @@ class PathLocation(Location):
 class PathSource(Source, PathLocation):
     """Provide a local, path-based back-up source."""
 
-    def to_rsync(self):
+    def to_rsync(self, path=None):
         """Build this location's rsync path.
 
+        :param path: Optional[backuppy.location.Path]
         :return: str
         """
+        assert path is None or isinstance(path, Path)
+        if path:
+            return os.path.join(self._path, str(path))
         return self._path
 
 
 class PathTarget(Target, PathLocation):
     """Provide a local, path-based back-up target."""
 
-    def to_rsync(self):
+    def to_rsync(self, path=None):
         """Build this location's rsync path.
 
+        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        return '/'.join([self.path, 'latest/'])
+        assert path is None or isinstance(path, Path)
+        parts = [self._path, 'latest/']
+        if path:
+            parts.append(str(path))
+        return os.path.join(*parts)
 
     def snapshot(self, name):
         """Create a new snapshot.
@@ -226,12 +290,17 @@ class SshTarget(Target):
         """
         return self._port
 
-    def to_rsync(self):
+    def to_rsync(self, path=None):
         """Build this location's rsync path.
 
+        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        return '%s@%s:%d%s/latest' % (self.user, self.host, self.port, self.path)
+        assert path is None or isinstance(path, Path)
+        parts = [self.path, 'latest/']
+        if path:
+            parts.append(str(path))
+        return '%s@%s:%d%s' % (self.user, self.host, self.port, os.path.join(*parts))
 
 
 class FirstAvailableTarget(Target):
@@ -252,12 +321,13 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target() is not None
 
-    def to_rsync(self):
+    def to_rsync(self, path=None):
         """Build this location's rsync path.
 
+        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        return self._get_available_target().to_rsync()
+        return self._get_available_target().to_rsync(path)
 
     def snapshot(self, name):
         """Create a new snapshot.

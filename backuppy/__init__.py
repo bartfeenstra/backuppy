@@ -13,7 +13,8 @@ def assert_path(test, actual_path, expected_path):
     expected_path = expected_path.rstrip('/') + '/'
     try:
         for expected_dir_path, child_dir_names, child_file_names in os.walk(expected_path):
-            actual_dir_path = os.path.join(actual_path, expected_dir_path[len(expected_path):])
+            actual_dir_path = os.path.join(
+                actual_path, expected_dir_path[len(expected_path):])
             for child_file_name in child_file_names:
                 with open(os.path.join(expected_dir_path, child_file_name)) as expected_f:
                     with open(os.path.join(actual_dir_path, child_file_name)) as actual_f:
