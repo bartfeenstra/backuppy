@@ -20,9 +20,9 @@
 
 # -- Project information -----------------------------------------------------
 import os
+import subprocess
 
 from m2r import convert
-from sphinx.ext.apidoc import main
 
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +30,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def setup(app):
     """Register this configuration as a Sphinx extension."""
-    main(['-o', os.path.join(ROOT_PATH, 'docs'), 'backuppy'])
+    subprocess.call(['sphinx-apidoc', '-o', os.path.join(ROOT_PATH, 'docs'), 'backuppy'])
 
     with open(os.path.join(ROOT_PATH, 'README.md')) as f:
         readme_rst = convert(f.read())
