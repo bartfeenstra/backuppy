@@ -10,6 +10,7 @@ import yaml
 
 from backuppy import task
 from backuppy.config import from_json, from_yaml
+from backuppy.location import FilePath, DirectoryPath
 from backuppy.notifier import StdioNotifier
 
 FORMAT_JSON_EXTENSIONS = ('json',)
@@ -45,7 +46,7 @@ class StdioNotifierLoggingHandler(Handler):
 
 
 class ConfigurationAction(argparse.Action):
-    """Provide a Semantic Version action."""
+    """Provide a configuration file action."""
 
     def __init__(self, *args, **kwargs):
         """Initialize a new instance."""
@@ -84,6 +85,34 @@ class ConfigurationAction(argparse.Action):
                 logger.addHandler(StdioNotifierLoggingHandler())
 
             setattr(namespace, self.dest, configuration)
+
+
+class FilePathAction(argparse.Action):
+    """Provide a file path action."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize a new instance."""
+        kwargs.setdefault(
+            'help', 'The path to a specific file to limit the operation to.')
+        argparse.Action.__init__(self, *args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """Invoke the action."""
+        setattr(namespace, self.dest, FilePath(values))
+
+
+class DirectoryPathAction(argparse.Action):
+    """Provide a directory path action."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize a new instance."""
+        kwargs.setdefault(
+            'help', 'The path to a specific directory to limit the operation to.')
+        argparse.Action.__init__(self, *args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """Invoke the action."""
+        setattr(namespace, self.dest, DirectoryPath(values))
 
 
 def add_configuration_to_parser(parser):
@@ -143,10 +172,14 @@ def add_restore_command_to_parser(parser):
     :return: argparse.ArgumentParser
     """
     restore_parser = parser.add_parser('restore', help='Restores a back-up.')
-    restore_parser.set_defaults(
-        func=lambda parsed_args: restore(parsed_args.configuration, parsed_args.force))
+    restore_parser.set_defaults(func=lambda parsed_args: restore(
+        parsed_args.configuration, parsed_args.force, parsed_args.path))
     add_configuration_to_parser(restore_parser)
-    add_force_to_args((restore_parser))
+    path_parser = restore_parser.add_mutually_exclusive_group()
+    path_parser.add_argument('--file', dest='path', action=FilePathAction,)
+    path_parser.add_argument('--dir', '--directory',
+                             dest='path', action=DirectoryPathAction,)
+    add_force_to_args(restore_parser)
     return parser
 
 
@@ -337,11 +370,12 @@ def init():
         'Your new back-up configuration has been saved. Start backing up your data by running the following command: backuppy -c %s' % configuration_file_path)
 
 
-def restore(configuration, force=False):
+def restore(configuration, force=False, path=''):
     """Handle the back-up restoration command.
 
     :param configuration: Configuration
     :param force: bool
+    :param path: str
     :return: bool
     """
     confirm_label = 'Restore my back-up, possibly overwriting newer files.'
@@ -350,7 +384,7 @@ def restore(configuration, force=False):
         configuration.notifier.confirm('Aborting back-up restoration...')
         return True
 
-    task.restore(configuration)
+    task.restore(configuration, path)
 
 
 def main(args):
@@ -360,7 +394,7 @@ def main(args):
     add_commands_to_parser(parser)
 
     # In Python 2.7, --help is not invoked when no subcommand is given, so we mimic the Python 3 behavior in a
-    # # cross-platform way by invoking the help explicitly if no CLI arguments have been given.
+    # cross-platform way by invoking the help explicitly if no CLI arguments have been given.
     if not args:
         parser.print_help()
         return
@@ -376,3 +410,5 @@ def main(args):
         configuration.logger.exception('A fatal error occurred.')
         configuration.notifier.alert(
             'A fatal error occurred. Details have been logged as per your configuration.')
+    finally:
+        return

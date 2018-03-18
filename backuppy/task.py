@@ -1,8 +1,10 @@
 """Code to run back-ups."""
 import subprocess
 
+import os
+
 from backuppy.config import Configuration
-from backuppy.location import new_snapshot_name
+from backuppy.location import new_snapshot_name, Path, FilePath, DirectoryPath
 
 
 def backup(configuration):
@@ -44,12 +46,14 @@ def backup(configuration):
     return True
 
 
-def restore(configuration):
+def restore(configuration, path=None):
     """Restores a back-up.
 
     :param configuration: Configuration
+    :param path: backuppy.location.Path
     """
     assert isinstance(configuration, Configuration)
+    assert path is None or isinstance(path, Path)
     notifier = configuration.notifier
     source = configuration.source
     target = configuration.target
@@ -72,10 +76,15 @@ def restore(configuration):
     if configuration.verbose:
         args.append('--verbose')
         args.append('--progress')
-    args.append(target.to_rsync())
-    args.append(source.to_rsync())
+    args.append(target.to_rsync(path))
+    if isinstance(path, FilePath):
+        args.append(source.to_rsync(DirectoryPath(
+            os.path.dirname(str(path)) + '/')))
+    else:
+        args.append(source.to_rsync(path))
     subprocess.call(args)
 
-    notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
+    notifier.confirm('Restoration of back-up %s complete.' %
+                     configuration.name)
 
     return True

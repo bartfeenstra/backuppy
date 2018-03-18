@@ -35,7 +35,7 @@ class PathLocationTest(TestCase):
         def snapshot(self, name):
             pass
 
-        def to_rsync(self):
+        def to_rsync(self, path=None):
             pass
 
     def test_is_available(self):
@@ -96,7 +96,7 @@ class SshTargetTest(TestCase):
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
         self.assertEquals(
-            sut.to_rsync(), 'bart@example.com:666/var/cache/latest')
+            sut.to_rsync(), 'bart@example.com:666/var/cache/latest/')
 
     @patch('paramiko.SSHClient', autospec=True)
     def test_is_available(self, m):
