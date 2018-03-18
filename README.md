@@ -12,6 +12,9 @@ The following instructions can be executed in any system Python environment, but
 ## License
 Backuppy is released under the [MIT](./LICENSE) license.
 
+## Documentation
+Extended API documentation is available at [Read the Docs](https://backuppy.readthedocs.io/en/latest/).
+
 ## Usage
 
 ### Requirements
@@ -193,6 +196,9 @@ With tox, run `tox --develop --notest`.
 In any Python environment, run `./bin/test`.
 
 With tox, run `tox --develop`
+
+### Viewing documentation
+In any Python environment, run `./bin/build-docs`, and open `./docs-build/index.html`.
 
 ### Fixing problems automatically
 In any Python environment, run `./bin/fix`.

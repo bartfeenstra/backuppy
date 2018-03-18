@@ -3,4 +3,5 @@
 /backuppy.egg-info
 /build
 /dist
+/docs-build
 *.pyc

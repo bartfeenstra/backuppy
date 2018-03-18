@@ -8,6 +8,7 @@ trap '(( exit_code |= $? ))' ERR
 
 flake8 --ignore=E501 ./backuppy
 pydocstyle
+./bin/build-docs
 coverage run -m nose2
 coverage report -m
 

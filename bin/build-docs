@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cd `dirname "$0"`/..
+sphinx-build -b html ./docs ./docs-build
