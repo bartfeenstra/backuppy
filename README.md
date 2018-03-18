@@ -197,5 +197,8 @@ In any Python environment, run `./bin/test`.
 
 With tox, run `tox --develop`
 
+### Viewing documentation
+In any Python environment, run `./bin/build-docs`, and open `./docs-build/index.html`.
+
 ### Fixing problems automatically
 In any Python environment, run `./bin/fix`.
