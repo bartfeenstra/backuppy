@@ -3,6 +3,8 @@ import subprocess
 import time
 from unittest import TestCase
 
+from parameterized import parameterized
+
 from backuppy import assert_path
 from backuppy.location import PathSource, PathTarget, FilePath, DirectoryPath
 from backuppy.task import backup, restore
@@ -121,7 +123,7 @@ class BackupTest(TestCase):
 
 
 class RestoreTest(TestCase):
-    def test_restore(self):
+    def test_restore_all(self):
         file_name = 'some.file'
         file_contents = 'This is just some file...'
         sub_file_name = 'some.file.in.subdirectory'
@@ -153,7 +155,11 @@ class RestoreTest(TestCase):
                 assert_path(self, source_path, os.path.join(
                     target_path, 'latest'))
 
-    def test_restore_with_directory_path(self):
+    @parameterized.expand([
+        (DirectoryPath('sub/'),),
+        (DirectoryPath('/sub/'),),
+    ])
+    def test_restore_with_directory_path(self, path):
         file_name = 'some.file'
         file_contents = 'This is just some file...'
         sub_file_name = 'some.file.in.subdirectory'
@@ -180,7 +186,7 @@ class RestoreTest(TestCase):
                 configuration.target = PathTarget(
                     configuration.logger, configuration.notifier, target_path)
 
-                result = restore(configuration, DirectoryPath('sub/'))
+                result = restore(configuration, path)
                 self.assertTrue(result)
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, os.path.join(

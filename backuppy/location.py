@@ -61,7 +61,8 @@ class FilePath(Path):
         """
         if path.endswith('/'):
             raise ValueError('A file path must not end with a slash (/).')
-        self._path = path
+        # Paths are always relative against the target root paths.
+        self._path = path.lstrip('/')
 
     def __str__(self):
         """Render the path as a string.
@@ -81,7 +82,8 @@ class DirectoryPath(Path):
         """
         if not path.endswith('/'):
             raise ValueError('A directory path must end with a slash (/).')
-        self._path = path
+        # Paths are always relative against the target root paths.
+        self._path = path.lstrip('/')
 
     def __str__(self):
         """Render the path as a string.
