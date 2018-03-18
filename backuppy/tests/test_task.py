@@ -194,7 +194,11 @@ class RestoreTest(TestCase):
                 assert_path(self, os.path.join(source_path, 'sub'),
                             os.path.join(target_path, 'latest', 'sub'))
 
-    def test_restore_with_file_path(self):
+    @parameterized.expand([
+        (FilePath('sub/some.file.in.subdirectory'),),
+        (FilePath('/sub/some.file.in.subdirectory'),),
+    ])
+    def test_restore_with_file_path(self, path):
         file_name = 'some.file'
         file_contents = 'This is just some file...'
         sub_file_name = 'some.file.in.subdirectory'
@@ -221,8 +225,7 @@ class RestoreTest(TestCase):
                 configuration.target = PathTarget(
                     configuration.logger, configuration.notifier, target_path)
 
-                result = restore(configuration, FilePath(
-                    'sub/' + sub_file_name))
+                result = restore(configuration, path)
                 self.assertTrue(result)
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, os.path.join(
