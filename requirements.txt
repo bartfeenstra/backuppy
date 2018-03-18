@@ -1,3 +1,4 @@
 paramiko ~= 2.4.0
 pyaml ~= 17.12.1
+recommonmark ~= 0.4.0
 six ~= 1.11.0
