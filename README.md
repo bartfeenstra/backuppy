@@ -13,7 +13,7 @@ The following instructions can be executed in any system Python environment, but
 Backuppy is released under the [MIT](./LICENSE) license.
 
 ## Documentation
-Extended API documentation is available at [Read the Docs](http://backuppy.readthedocs.io/en/latest/).
+Extended API documentation is available at [Read the Docs](https://backuppy.readthedocs.io/en/latest/).
 
 ## Usage
 
