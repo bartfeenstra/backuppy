@@ -9,6 +9,18 @@ def assert_path(test, actual_path, expected_path):
     :param expected_path: str
     :raise: AssertionError
     """
+    _assert_path(test, actual_path, expected_path)
+    _assert_path(test, expected_path, actual_path)
+
+
+def _assert_path(test, actual_path, expected_path):
+    """Assert the contents of an actual directory appear in another.
+
+    :param test: unittest.TestCase
+    :param actual_path: str
+    :param expected_path: str
+    :raise: AssertionError
+    """
     actual_path = actual_path.rstrip('/') + '/'
     expected_path = expected_path.rstrip('/') + '/'
     try:
