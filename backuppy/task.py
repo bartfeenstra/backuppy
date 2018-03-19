@@ -7,12 +7,14 @@ from backuppy.config import Configuration
 from backuppy.location import new_snapshot_name, Path, FilePath, DirectoryPath
 
 
-def backup(configuration):
+def backup(configuration, path=None):
     """Start a new back-up.
 
     :param configuration: Configuration
+    :param path: backuppy.location.Path
     """
     assert isinstance(configuration, Configuration)
+    assert path is None or isinstance(path, Path)
     notifier = configuration.notifier
     source = configuration.source
     target = configuration.target
@@ -37,8 +39,12 @@ def backup(configuration):
     if configuration.verbose:
         args.append('--verbose')
         args.append('--progress')
-    args.append(source.to_rsync())
-    args.append(target.to_rsync())
+    args.append(source.to_rsync(path))
+    if isinstance(path, FilePath):
+        args.append(target.to_rsync(DirectoryPath(
+            os.path.dirname(str(path)) + '/')))
+    else:
+        args.append(target.to_rsync(path))
     subprocess.call(args)
 
     notifier.confirm('Back-up %s complete.' % configuration.name)

@@ -152,6 +152,18 @@ def add_force_to_args(parser):
     return parser
 
 
+def add_path_to_args(parser):
+    """Add path options to a parser.
+
+    :param parser: argparse.ArgumentParser
+    :return: argparse.ArgumentParser
+    """
+    path_parser = parser.add_mutually_exclusive_group()
+    path_parser.add_argument('--file', dest='path', action=FilePathAction,)
+    path_parser.add_argument('--dir', '--directory', dest='path', action=DirectoryPathAction,)
+    return parser
+
+
 def add_backup_command_to_parser(parser):
     """Add the back-up command to a parser.
 
@@ -162,6 +174,7 @@ def add_backup_command_to_parser(parser):
     backup_parser.set_defaults(
         func=lambda parsed_args: task.backup(parsed_args.configuration))
     add_configuration_to_parser(backup_parser)
+    add_path_to_args(backup_parser)
     return parser
 
 
@@ -175,10 +188,7 @@ def add_restore_command_to_parser(parser):
     restore_parser.set_defaults(func=lambda parsed_args: restore(
         parsed_args.configuration, parsed_args.force, parsed_args.path))
     add_configuration_to_parser(restore_parser)
-    path_parser = restore_parser.add_mutually_exclusive_group()
-    path_parser.add_argument('--file', dest='path', action=FilePathAction,)
-    path_parser.add_argument('--dir', '--directory',
-                             dest='path', action=DirectoryPathAction,)
+    add_path_to_args(restore_parser)
     add_force_to_args(restore_parser)
     return parser
 
