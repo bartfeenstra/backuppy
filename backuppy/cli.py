@@ -140,15 +140,18 @@ def add_verbose_to_args(parser):
     return parser
 
 
-def add_force_to_args(parser):
-    """Add force/non-interactivity options to a parser.
+def add_interactivity_to_args(parser):
+    """Add interactivity options to a parser.
 
     :param parser: argparse.ArgumentParser
     :return: argparse.ArgumentParser
     """
-    parser.add_argument('-f', '--force', dest='force', action='store_true',
-                        help='Do not ask for confirmations to perform possible destructive tasks. This makes the command non-interactive, which is useful for automated scripts.')
-    parser.set_defaults(force=False)
+    interactivity_parser = parser.add_mutually_exclusive_group()
+    interactivity_parser.add_argument('--interactive', dest='interactive', action='store_true',
+                                      help='Ask for confirmations to perform possibly risky tasks.')
+    interactivity_parser.add_argument('--no-interactive', '-f', dest='interactive', action='store_false',
+                                      help='Do not ask for confirmations to perform possibly risky tasks. This makes the command non-interactive, which is useful for automated scripts.')
+    parser.set_defaults(interactive=True)
     return parser
 
 
@@ -173,13 +176,13 @@ def add_restore_command_to_parser(parser):
     """
     restore_parser = parser.add_parser('restore', help='Restores a back-up.')
     restore_parser.set_defaults(func=lambda parsed_args: restore(
-        parsed_args.configuration, parsed_args.force, parsed_args.path))
+        parsed_args.configuration, parsed_args.interactive, parsed_args.path))
     add_configuration_to_parser(restore_parser)
     path_parser = restore_parser.add_mutually_exclusive_group()
     path_parser.add_argument('--file', dest='path', action=FilePathAction,)
     path_parser.add_argument('--dir', '--directory',
                              dest='path', action=DirectoryPathAction,)
-    add_force_to_args(restore_parser)
+    add_interactivity_to_args(restore_parser)
     return parser
 
 
@@ -370,17 +373,17 @@ def init():
         'Your new back-up configuration has been saved. Start backing up your data by running the following command: backuppy -c %s' % configuration_file_path)
 
 
-def restore(configuration, force=False, path=''):
+def restore(configuration, interactive=True, path=''):
     """Handle the back-up restoration command.
 
     :param configuration: Configuration
-    :param force: bool
+    :param interactive: bool
     :param path: str
     :return: bool
     """
     confirm_label = 'Restore my back-up, possibly overwriting newer files.'
     confirm_question = 'Restoring back-ups may result in (newer) files on the source location being overwritten by (older) files from your back-ups. Confirm that this is indeed your intention.'
-    if not force and not ask_confirm(confirm_label, question=confirm_question):
+    if interactive and not ask_confirm(confirm_label, question=confirm_question):
         configuration.notifier.confirm('Aborting back-up restoration...')
         return True
 
