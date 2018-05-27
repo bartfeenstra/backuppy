@@ -74,7 +74,7 @@ def _new_ssh_target_from_configuration_data(configuration, configuration_data):
                 '`port` must be an integer ranging from 0 to 65535.')
         kwargs['port'] = configuration_data['port']
 
-    return SshTarget(configuration.notifier, **kwargs)
+    return SshTarget(configuration.notifier, interactive=configuration.interactive, **kwargs)
 
 
 def _new_first_available_target_from_configuration_data(configuration, configuration_data):

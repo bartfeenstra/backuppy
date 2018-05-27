@@ -10,6 +10,8 @@ import paramiko
 import six
 from paramiko import SSHException, RejectPolicy
 
+from backuppy.cli.input import ask_confirm
+
 
 def new_snapshot_name():
     """Build the name for a new back-up snapshot.
@@ -28,7 +30,7 @@ def _new_snapshot_args(name):
         # If the given snapshot does not exist, prepopulate the new snapshot with an archived, linked, recursive copy of
         # the previous snapshot if it exists, or create a new, empty snapshot otherwise.
         ['bash', '-c', '[ ! -d %s ] && [ -d latest ] && cp -al `readlink latest` %s' %
-            (name, name)],
+         (name, name)],
 
         # Create the new snapshot directory if it does not exist.
         ['bash', '-c', '[ ! -d %s ] && mkdir %s' % (name, name)],
@@ -205,10 +207,25 @@ class PathTarget(Target, PathLocation):
             subprocess.call(args, cwd=self._path)
 
 
+class AskPolicy(RejectPolicy):
+    """An SSH missing host key policy that interactively asks users whether to accept the key."""
+
+    def missing_host_key(self, client, hostname, key):
+        """Handle a missing host key."""
+        fingerprint = key.get_fingerprint().hex()
+        fingerprint_label = ':'.join(
+            [fingerprint[i:i + 2] for i in range(0, len(fingerprint), 2)])
+        add = ask_confirm('Accept unknown host',
+                          'Do you want to connect to previously unknown host %s using %s key %s?\nThe fact that this host is unknown can mean you have never connected to it before, its SSH server has been reconfigured, or it has been compromised.' % (
+                              hostname, key.get_name(), fingerprint_label), False)
+        if not add:
+            RejectPolicy.missing_host_key(self, client, hostname, key)
+
+
 class SshTarget(Target):
     """Provide a target over SSH."""
 
-    def __init__(self, notifier, user, host, path, port=22, identity=None, host_keys=None):
+    def __init__(self, notifier, user, host, path, port=22, identity=None, host_keys=None, interactive=False):
         """Initialize a new instance.
 
         :param user: str
@@ -217,6 +234,7 @@ class SshTarget(Target):
         :param port: int
         :param identity: Optional[str]
         :param host_keys: Optional[str]
+        :param interactive: bool
         """
         self._notifier = notifier
         self._user = user
@@ -225,6 +243,7 @@ class SshTarget(Target):
         self._path = path
         self._identity = identity
         self._host_keys = host_keys
+        self._interactive = interactive
 
     def is_available(self):
         """Check if the target is available.
@@ -234,9 +253,9 @@ class SshTarget(Target):
         try:
             with self._connect():
                 return True
-        except SSHException:
+        except SSHException as e:
             self._notifier.alert(
-                'Could not establish an SSH connection to the remote.')
+                'Could not establish an SSH connection to the remote: %s.' % str(e))
             return False
         except socket.timeout:
             self._notifier.alert('The remote timed out.')
@@ -260,7 +279,10 @@ class SshTarget(Target):
         client.load_system_host_keys()
         if self._host_keys:
             client.load_host_keys(self._host_keys)
-        client.set_missing_host_key_policy(RejectPolicy())
+        if self._interactive:
+            client.set_missing_host_key_policy(AskPolicy())
+        else:
+            client.set_missing_host_key_policy(RejectPolicy())
         connect_args = {}
         if self._identity:
             connect_args['look_for_keys'] = False

@@ -4,9 +4,9 @@ import subprocess
 from logging import getLogger
 from unittest import TestCase
 
-from paramiko import SSHException
+from paramiko import SSHException, SSHClient, PKey
 
-from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget
+from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
 from backuppy.notifier import Notifier
 from backuppy.tests import RESOURCE_PATH
 
@@ -88,6 +88,29 @@ class PathTargetTest(TestCase):
             self.assertTrue(os.path.exists('/'.join([path, snapshot_2_name])))
             self.assertEquals(latest_snapshot_path,
                               '/'.join([path, snapshot_2_name]))
+
+
+class AskPolicyTest(TestCase):
+    @patch('backuppy.cli.input._input')
+    def test_ask_confirm_yes_should_accept(self, m_input):
+        sut = AskPolicy()
+        m_input.side_effect = lambda *args: 'y'
+        client = Mock(SSHClient)
+        hostname = 'example.com'
+        key = Mock(PKey)
+        key.get_fingerprint.side_effect = lambda *args: b'foo'
+        sut.missing_host_key(client, hostname, key)
+
+    @patch('backuppy.cli.input._input')
+    def test_ask_confirm_no_should_reject(self, m_input):
+        sut = AskPolicy()
+        m_input.side_effect = lambda *args: 'n'
+        client = Mock(SSHClient)
+        hostname = 'example.com'
+        key = Mock(PKey)
+        key.get_fingerprint.side_effect = lambda *args: b'foo'
+        with self.assertRaises(SSHException):
+            sut.missing_host_key(client, hostname, key)
 
 
 class SshTargetTest(TestCase):
