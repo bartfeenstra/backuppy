@@ -6,14 +6,18 @@ python:
     - "3.6"
     - "pypy"
 
+os:
+  - linux
+  - osx
+
 services:
   - docker
 
 addons:
-    apt:
-        packages:
-            - libnotify-bin
-            - sshpass
+  apt:
+    packages:
+      - libnotify-bin
+      - sshpass
 
 cache: pip
 
