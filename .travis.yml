@@ -9,6 +9,11 @@ python:
 services:
   - docker
 
+addons:
+  apt:
+    packages:
+    - sshpass
+
 cache: pip
 
 addons:
