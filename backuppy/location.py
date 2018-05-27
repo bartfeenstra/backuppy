@@ -208,19 +208,23 @@ class PathTarget(Target, PathLocation):
 class SshTarget(Target):
     """Provide a target over SSH."""
 
-    def __init__(self, notifier, user, host, path, port=22):
+    def __init__(self, notifier, user, host, path, port=22, identity=None, host_keys=None):
         """Initialize a new instance.
 
         :param user: str
         :param host: str
         :param path: str
         :param port: int
+        :param identity: Optional[str]
+        :param host_keys: Optional[str]
         """
         self._notifier = notifier
         self._user = user
         self._host = host
         self._port = port
         self._path = path
+        self._identity = identity
+        self._host_keys = host_keys
 
     def is_available(self):
         """Check if the target is available.
@@ -228,8 +232,8 @@ class SshTarget(Target):
         :return: bool
         """
         try:
-            self._connect()
-            return True
+            with self._connect():
+                return True
         except SSHException:
             self._notifier.alert(
                 'Could not establish an SSH connection to the remote.')
@@ -254,8 +258,15 @@ class SshTarget(Target):
         """
         client = paramiko.SSHClient()
         client.load_system_host_keys()
+        if self._host_keys:
+            client.load_host_keys(self._host_keys)
         client.set_missing_host_key_policy(RejectPolicy())
-        client.connect(self._host, self._port, self._user, timeout=9)
+        connect_args = {}
+        if self._identity:
+            connect_args['look_for_keys'] = False
+            connect_args['key_filename'] = self._identity
+        client.connect(self._host, self._port, self._user,
+                       timeout=9, **connect_args)
         return client
 
     @property
