@@ -234,7 +234,7 @@ class SshTarget(Target):
         try:
             with self._connect():
                 return True
-        except SSHException as e:
+        except SSHException:
             self._notifier.alert(
                 'Could not establish an SSH connection to the remote.')
             return False
