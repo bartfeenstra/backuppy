@@ -6,12 +6,16 @@ python:
     - "3.6"
     - "pypy"
 
-cache: pip
+services:
+  - docker
 
 addons:
     apt:
         packages:
             - libnotify-bin
+            - sshpass
+
+cache: pip
 
 install:
     - ./bin/build-dev

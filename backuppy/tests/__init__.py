@@ -1,4 +1,6 @@
 import os
 
-CONFIGURATION_PATH = '/'.join(
-    (os.path.dirname(os.path.abspath(__file__)), 'resources', 'configuration'))
+RESOURCE_PATH = '/'.join(
+    (os.path.dirname(os.path.abspath(__file__)), 'resources'))
+
+CONFIGURATION_PATH = '/'.join((RESOURCE_PATH, 'configuration'))
