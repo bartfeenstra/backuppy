@@ -10,16 +10,12 @@ services:
   - docker
 
 addons:
-  apt:
-    packages:
-    - sshpass
-
-cache: pip
-
-addons:
     apt:
         packages:
             - libnotify-bin
+            - sshpass
+
+cache: pip
 
 install:
     - ./bin/build-dev
