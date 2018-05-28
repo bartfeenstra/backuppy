@@ -52,9 +52,6 @@ class ConfigurationAction(argparse.Action):
             verbose = False
         if namespace.verbose:
             verbose = True
-        interactive = None
-        if namespace.interactive:
-            interactive = namespace.interactive
         with open(configuration_file_path) as f:
             if any(map(f.name.endswith, FORMAT_JSON_EXTENSIONS)):
                 configuration_factory = from_json
@@ -64,7 +61,7 @@ class ConfigurationAction(argparse.Action):
                 raise ValueError(
                     'Configuration files must have *.json, *.yml, or *.yaml extensions.')
             configuration = configuration_factory(
-                f, verbose=verbose, interactive=interactive)
+                f, verbose=verbose, interactive=namespace.interactive)
 
             # Ensure at least some form of error logging is enabled.
             logger = configuration.logger
@@ -144,7 +141,7 @@ def add_interactivity_to_args(parser):
                                       help='Always ask for confirmation before performing possibly risky tasks.')
     interactivity_parser.add_argument('--non-interactive', dest='interactive', action='store_false',
                                       help='Do not ask for confirmation before performing possibly risky tasks. This makes the command non-interactive, which is useful for automated scripts.')
-    parser.set_defaults(interactive=True)
+    parser.set_defaults(interactive=None)
     return parser
 
 
@@ -183,7 +180,7 @@ def add_restore_command_to_parser(parser):
     """
     restore_parser = parser.add_parser('restore', help='Restores a back-up.')
     restore_parser.set_defaults(func=lambda parsed_args: restore(
-        parsed_args.configuration, parsed_args.interactive, parsed_args.path))
+        parsed_args.configuration, parsed_args.path))
     add_configuration_to_parser(restore_parser)
     add_path_to_args(restore_parser)
     return parser
@@ -289,17 +286,16 @@ def init():
         'Your new back-up configuration has been saved. Start backing up your data by running the following command: backuppy -c %s' % configuration_file_path)
 
 
-def restore(configuration, interactive=True, path=''):
+def restore(configuration, path=''):
     """Handle the back-up restoration command.
 
     :param configuration: Configuration
-    :param interactive: bool
     :param path: str
     :return: bool
     """
     confirm_label = 'Restore my back-up, possibly overwriting newer files.'
     confirm_question = 'Restoring back-ups may result in (newer) files on the source location being overwritten by (older) files from your back-ups. Confirm that this is indeed your intention.'
-    if interactive and not ask_confirm(confirm_label, question=confirm_question):
+    if configuration.interactive and not ask_confirm(confirm_label, question=confirm_question):
         configuration.notifier.confirm('Aborting back-up restoration...')
         return True
 
