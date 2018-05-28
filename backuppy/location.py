@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 from abc import ABCMeta
+from binascii import b2a_hex
 from time import strftime, gmtime
 
 import paramiko
@@ -212,7 +213,7 @@ class AskPolicy(RejectPolicy):
 
     def missing_host_key(self, client, hostname, key):
         """Handle a missing host key."""
-        fingerprint = key.get_fingerprint().hex()
+        fingerprint = b2a_hex(key.get_fingerprint()).decode('utf-8')
         fingerprint_label = ':'.join(
             [fingerprint[i:i + 2] for i in range(0, len(fingerprint), 2)])
         add = ask_confirm('Accept unknown host',
