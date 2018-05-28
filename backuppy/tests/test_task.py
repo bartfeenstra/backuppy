@@ -23,23 +23,30 @@ from backuppy.config import Configuration
 from backuppy.notifier import Notifier
 
 
+def build_files_stage_1(path):
+    with open(os.path.join(path, 'some.file'), mode='w+t') as f:
+        f.write('This is just some file...')
+        f.flush()
+    os.makedirs(os.path.join(path, 'sub'))
+    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
+        f.write('This is just some other file in a subdirectory...')
+        f.flush()
+
+
+def build_files_stage_2(path):
+    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
+        f.write('This is just some other file in a subdirectory that we made some changes to...')
+        f.flush()
+    with open(os.path.join(path, 'some.later.file'), mode='w+t') as f:
+        f.write('These contents were added much later.')
+        f.flush()
+
+
 class BackupTest(TestCase):
     def test_backup_all(self):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -78,11 +85,7 @@ class BackupTest(TestCase):
 
                 # Change the source data and create another snapshot. Confirm the first two snapshots remain untouched,
                 # and only the new one contains the changes.
-                later_file_name = 'some.later.file'
-                later_file_contents = 'These contents were added much later.'
-                with open(os.path.join(source_path, later_file_name), mode='w+t') as f:
-                    f.write(later_file_contents)
-                    f.flush()
+                build_files_stage_2(source_path)
                 result = backup(configuration)
                 self.assertTrue(result)
                 assert_paths_identical(self, os.path.join(
@@ -98,21 +101,9 @@ class BackupTest(TestCase):
         (DirectoryPath('/sub/'),),
     ])
     def test_backup_with_directory_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -155,21 +146,9 @@ class BackupTest(TestCase):
         (FilePath('/sub/some.file.in.subdirectory'),),
     ])
     def test_backup_with_file_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -240,22 +219,9 @@ class BackupTest(TestCase):
 
 class RestoreTest(TestCase):
     def test_restore_all(self):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', 'sub'))
-            with open(os.path.join(target_path, 'latest', 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(target_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -276,22 +242,11 @@ class RestoreTest(TestCase):
         (DirectoryPath('/sub/'),),
     ])
     def test_restore_with_directory_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', str(path)))
-            with open(os.path.join(target_path, 'latest', str(path), sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            latest_path = os.path.join(target_path, 'latest')
+            os.makedirs(latest_path)
+            build_files_stage_1(latest_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -315,22 +270,11 @@ class RestoreTest(TestCase):
         (FilePath('/sub/some.file.in.subdirectory'),),
     ])
     def test_restore_with_file_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', str(path)))
-            with open(os.path.join(target_path, 'latest', str(path), sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            latest_path = os.path.join(target_path, 'latest')
+            os.makedirs(latest_path)
+            build_files_stage_1(latest_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
