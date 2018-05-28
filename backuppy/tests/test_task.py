@@ -130,7 +130,8 @@ class BackupTest(TestCase):
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(source_path, str(path)), os.path.join(real_snapshot_1_path, str(path)))
+                assert_path(self, os.path.join(source_path, str(path)),
+                            os.path.join(real_snapshot_1_path, str(path)))
 
                 # Sleep for two seconds, so we are (hopefully) absolutely sure the time-based snapshot name generator
                 # will not generate identical names for all snapshots.
@@ -142,10 +143,12 @@ class BackupTest(TestCase):
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, real_snapshot_2_path)
-                assert_path(self, os.path.join(source_path, str(path)), os.path.join(real_snapshot_2_path, str(path)))
+                assert_path(self, os.path.join(source_path, str(path)),
+                            os.path.join(real_snapshot_2_path, str(path)))
 
                 # Ensure the previous snapshot has not changed.
-                assert_path(self, os.path.join(real_snapshot_1_path, str(path)), os.path.join(source_path, str(path)))
+                assert_path(self, os.path.join(real_snapshot_1_path, str(
+                    path)), os.path.join(source_path, str(path)))
 
     @parameterized.expand([
         (FilePath('sub/some.file.in.subdirectory'),),
@@ -184,7 +187,8 @@ class BackupTest(TestCase):
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(source_path, str(path)), os.path.join(real_snapshot_1_path, str(path)))
+                assert_path(self, os.path.join(source_path, str(path)),
+                            os.path.join(real_snapshot_1_path, str(path)))
 
                 # Sleep for two seconds, so we are (hopefully) absolutely sure the time-based snapshot name generator
                 # will not generate identical names for all snapshots.
@@ -196,12 +200,14 @@ class BackupTest(TestCase):
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, real_snapshot_2_path)
-                assert_path(self, os.path.join(source_path, str(path)), os.path.join(real_snapshot_2_path, str(path)))
+                assert_path(self, os.path.join(source_path, str(path)),
+                            os.path.join(real_snapshot_2_path, str(path)))
 
                 # Ensure the previous snapshot has not changed.
                 with self.assertRaises(AssertionError):
                     assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(real_snapshot_1_path, str(path)), os.path.join(source_path, str(path)))
+                assert_path(self, os.path.join(real_snapshot_1_path, str(
+                    path)), os.path.join(source_path, str(path)))
 
     def test_backup_with_unavailable_source(self):
         # Create the source directory.

@@ -14,7 +14,7 @@ from backuppy.plugin import new_source, new_target, new_notifier
 class Configuration(object):
     """Provides back-up configuration."""
 
-    def __init__(self, name, working_directory=None, verbose=False):
+    def __init__(self, name, working_directory=None, verbose=False, interactive=False):
         """Initialize a new instance.
 
         :param name: str
@@ -25,6 +25,7 @@ class Configuration(object):
         self._name = name
         self._working_directory = working_directory
         self._verbose = verbose
+        self._interactive = interactive
         self._source = None
         self._target = None
         self._notifier = None
@@ -37,6 +38,14 @@ class Configuration(object):
         :return: bool
         """
         return self._verbose
+
+    @property
+    def interactive(self):
+        """Get whether the program runs interactively.
+
+        :return: bool
+        """
+        return self._interactive
 
     @verbose.setter
     def verbose(self, verbose):
@@ -140,22 +149,33 @@ class Configuration(object):
         return self._logger
 
 
-def from_configuration_data(configuration_file_path, data, verbose=None):
+def from_configuration_data(configuration_file_path, data, verbose=None, interactive=None):
     """Parse configuration from raw, built-in types such as dictionaries, lists, and scalars.
 
     :param configuration_file_path: str
     :param data: dict
     :param verbose: Optional[bool]
+    :param interactive: Optional[bool]
     :return: cls
     :raise: ValueError
     """
     name = data['name'] if 'name' in data else configuration_file_path
     working_directory = os.path.dirname(configuration_file_path)
+
     if verbose is None and 'verbose' in data:
         if not isinstance(data['verbose'], bool):
             raise ValueError('`verbose` must be a boolean.')
         verbose = data['verbose']
-    configuration = Configuration(name, working_directory, verbose)
+
+    if interactive is None:
+        interactive = True
+        if 'interactive' in data:
+            if not isinstance(data['interactive'], bool):
+                raise ValueError('`interactive` must be a boolean.')
+            interactive = data['interactive']
+
+    configuration = Configuration(
+        name, working_directory, verbose, interactive)
 
     if 'logging' in data:
         logging_config.dictConfig(data['logging'])
@@ -191,21 +211,23 @@ def from_configuration_data(configuration_file_path, data, verbose=None):
     return configuration
 
 
-def from_json(f, verbose=None):
+def from_json(f, verbose=None, interactive=None):
     """Parse configuration from a JSON file.
 
     :param f: File
     :param verbose: Optional[bool]
+    :param interactive: Optional[bool]
     :return: Configuration
     """
-    return from_configuration_data(f.name, json.load(f), verbose=verbose)
+    return from_configuration_data(f.name, json.load(f), verbose=verbose, interactive=interactive)
 
 
-def from_yaml(f, verbose=None):
+def from_yaml(f, verbose=None, interactive=None):
     """Parse configuration from a YAML file.
 
     :param f: File
     :param verbose: Optional[bool]
+    :param interactive: Optional[bool]
     :return: Configuration
     """
-    return from_configuration_data(f.name, yaml.load(f), verbose=verbose)
+    return from_configuration_data(f.name, yaml.load(f), verbose=verbose, interactive=interactive)
