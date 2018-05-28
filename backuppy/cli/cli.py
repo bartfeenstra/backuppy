@@ -47,11 +47,6 @@ class ConfigurationAction(argparse.Action):
         """Invoke the action."""
         configuration_file_path = values
 
-        verbose = None
-        if namespace.quiet:
-            verbose = False
-        if namespace.verbose:
-            verbose = True
         with open(configuration_file_path) as f:
             if any(map(f.name.endswith, FORMAT_JSON_EXTENSIONS)):
                 configuration_factory = from_json
@@ -61,7 +56,7 @@ class ConfigurationAction(argparse.Action):
                 raise ValueError(
                     'Configuration files must have *.json, *.yml, or *.yaml extensions.')
             configuration = configuration_factory(
-                f, verbose=verbose, interactive=namespace.interactive)
+                f, verbose=namespace.verbose, interactive=namespace.interactive)
 
             # Ensure at least some form of error logging is enabled.
             logger = configuration.logger
@@ -125,8 +120,9 @@ def add_verbose_to_args(parser):
     parser_verbosity = parser.add_mutually_exclusive_group()
     parser_verbosity.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                                   help='Generate verbose output. This overrides the value in the configuration file.')
-    parser_verbosity.add_argument('-q', '--quiet', dest='quiet', action='store_true',
+    parser_verbosity.add_argument('-q', '--quiet', dest='verbose', action='store_false',
                                   help='Do not generate verbose output. This overrides the value in the configuration file.')
+    parser.set_defaults(verbose=None)
     return parser
 
 
