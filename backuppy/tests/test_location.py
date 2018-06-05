@@ -8,14 +8,12 @@ from paramiko import SSHException, SSHClient, PKey
 
 from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
 from backuppy.notifier import Notifier
-from backuppy.tests import RESOURCE_PATH
+from backuppy.tests import SshLocationContainer
 
 try:
     from unittest.mock import Mock, patch
 except ImportError:
     from mock import Mock, patch
-
-from tempfile import NamedTemporaryFile
 
 try:
     from tempfile import TemporaryDirectory
@@ -122,7 +120,23 @@ class SshTargetTest(TestCase):
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
         self.assertEquals(
-            sut.to_rsync(), 'bart@example.com:666/var/cache/latest/')
+            sut.to_rsync(), 'bart@example.com:/var/cache/latest/')
+
+    def test_ssh_options(self):
+        notifier = Mock(Notifier)
+        user = 'bart'
+        host = 'example.com'
+        port = 666
+        path = '/var/cache'
+        sut = SshTarget(notifier, user, host, path, port)
+        expected_ssh_options = {
+            'IdentityFile': None,
+            'Port': str(port),
+            'StrictHostKeyChecking': 'yes',
+            'UserKnownHostsFile': None,
+        }
+        self.assertEquals(
+            sut.ssh_options(), expected_ssh_options)
 
     @patch('paramiko.SSHClient', autospec=True)
     def test_is_available(self, m):
@@ -177,71 +191,9 @@ class SshTargetTest(TestCase):
             m.return_value.__enter__().exec_command.assert_any_call(' '.join(args))
 
 
-class Container(object):
-    NAME = 'backuppy_test'
-    PORT = 22
-    USERNAME = 'root'
-    PASSWORD = 'root'
-    IDENTITY = os.path.join(RESOURCE_PATH, 'id_rsa')
-
-    def __init__(self):
-        self._started = False
-        self._ip = None
-        self._fingerprint = None
-
-    def _ensure_started(self):
-        if not self._started:
-            raise RuntimeError('This container has not been started yet.')
-
-    def start(self):
-        self.stop()
-        subprocess.call(['docker', 'run', '-d', '--name',
-                         self.NAME, 'rastasheep/ubuntu-sshd:18.04'])
-        self._started = True
-        self.await()
-        with self.known_hosts() as f:
-            subprocess.call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' %
-                             f.name, '%s.pub' % self.IDENTITY, '%s@%s:~/.ssh/authorized_keys' % (self.USERNAME, self.ip)])
-
-    def stop(self):
-        self._started = False
-        subprocess.call(['docker', 'stop', self.NAME])
-        subprocess.call(['docker', 'container', 'rm', self.NAME])
-
-    @property
-    def ip(self):
-        self._ensure_started()
-
-        if not self._ip:
-            self._ip = str(subprocess.check_output(
-                ['docker', 'inspect', '-f', '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
-                 self.NAME]).strip().decode('utf-8'))
-
-        return self._ip
-
-    @property
-    def fingerprint(self):
-        self._ensure_started()
-
-        if not self._fingerprint:
-            self._fingerprint = str(subprocess.check_output(
-                ['ssh-keyscan', '-t', 'rsa', self.ip]).decode('utf-8'))
-
-        return self._fingerprint
-
-    def known_hosts(self):
-        f = NamedTemporaryFile(mode='r+')
-        f.write(self.fingerprint)
-        f.flush()
-        return f
-
-    def await(self):
-        subprocess.call(['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
-
-
 class SshTargetIntegrationTest(TestCase):
     def setUp(self):
-        self._container = Container()
+        self._container = SshLocationContainer()
         self._container.start()
 
     def tearDown(self):

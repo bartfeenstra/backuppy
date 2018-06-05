@@ -5,9 +5,9 @@ from unittest import TestCase
 
 from parameterized import parameterized
 
-from backuppy import assert_path
 from backuppy.location import PathSource, PathTarget, FilePath, DirectoryPath
 from backuppy.task import backup, restore
+from backuppy.tests import assert_paths_identical, build_files_stage_1, build_files_stage_2
 
 try:
     from unittest.mock import Mock
@@ -25,21 +25,9 @@ from backuppy.notifier import Notifier
 
 class BackupTest(TestCase):
     def test_backup_all(self):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -53,7 +41,7 @@ class BackupTest(TestCase):
                 # Back up the first time.
                 result = backup(configuration)
                 self.assertTrue(result)
-                assert_path(self, source_path, os.path.join(
+                assert_paths_identical(self, source_path, os.path.join(
                     target_path, 'latest'))
                 real_snapshot_1_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
@@ -64,13 +52,13 @@ class BackupTest(TestCase):
 
                 result = backup(configuration)
                 self.assertTrue(result)
-                assert_path(self, os.path.join(
+                assert_paths_identical(self, os.path.join(
                     target_path, 'latest'), source_path)
                 real_snapshot_2_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
 
                 # Ensure the previous snapshot has not changed.
-                assert_path(self, real_snapshot_1_path, source_path)
+                assert_paths_identical(self, real_snapshot_1_path, source_path)
 
                 # Sleep for two seconds, so we are (hopefully) absolutely sure the time-based snapshot name generator
                 # will not generate identical names for all snapshots.
@@ -78,41 +66,27 @@ class BackupTest(TestCase):
 
                 # Change the source data and create another snapshot. Confirm the first two snapshots remain untouched,
                 # and only the new one contains the changes.
-                later_file_name = 'some.later.file'
-                later_file_contents = 'These contents were added much later.'
-                with open(os.path.join(source_path, later_file_name), mode='w+t') as f:
-                    f.write(later_file_contents)
-                    f.flush()
+                build_files_stage_2(source_path)
                 result = backup(configuration)
                 self.assertTrue(result)
-                assert_path(self, os.path.join(
+                assert_paths_identical(self, os.path.join(
                     target_path, 'latest'), source_path)
                 # Ensure the changes made to the source did not affect the previous snapshots.
                 with self.assertRaises(AssertionError):
-                    assert_path(self, real_snapshot_1_path, source_path)
+                    assert_paths_identical(
+                        self, real_snapshot_1_path, source_path)
                 with self.assertRaises(AssertionError):
-                    assert_path(self, real_snapshot_2_path, source_path)
+                    assert_paths_identical(
+                        self, real_snapshot_2_path, source_path)
 
     @parameterized.expand([
         (DirectoryPath('sub/'),),
         (DirectoryPath('/sub/'),),
     ])
     def test_backup_with_directory_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -129,9 +103,10 @@ class BackupTest(TestCase):
                 real_snapshot_1_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(real_snapshot_1_path, str(path)))
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(real_snapshot_1_path, str(path)))
 
                 # Sleep for two seconds, so we are (hopefully) absolutely sure the time-based snapshot name generator
                 # will not generate identical names for all snapshots.
@@ -142,12 +117,13 @@ class BackupTest(TestCase):
                 real_snapshot_2_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, real_snapshot_2_path)
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(real_snapshot_2_path, str(path)))
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_2_path)
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(real_snapshot_2_path, str(path)))
 
                 # Ensure the previous snapshot has not changed.
-                assert_path(self, os.path.join(real_snapshot_1_path, str(
+                assert_paths_identical(self, os.path.join(real_snapshot_1_path, str(
                     path)), os.path.join(source_path, str(path)))
 
     @parameterized.expand([
@@ -155,21 +131,9 @@ class BackupTest(TestCase):
         (FilePath('/sub/some.file.in.subdirectory'),),
     ])
     def test_backup_with_file_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the source directory.
         with TemporaryDirectory() as source_path:
-            # Create source content.
-            with open(os.path.join(source_path, file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(source_path, 'sub'))
-            with open(os.path.join(source_path, 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(source_path)
 
             # Create the target directory.
             with TemporaryDirectory() as target_path:
@@ -186,9 +150,10 @@ class BackupTest(TestCase):
                 real_snapshot_1_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(real_snapshot_1_path, str(path)))
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(real_snapshot_1_path, str(path)))
 
                 # Sleep for two seconds, so we are (hopefully) absolutely sure the time-based snapshot name generator
                 # will not generate identical names for all snapshots.
@@ -199,14 +164,16 @@ class BackupTest(TestCase):
                 real_snapshot_2_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, real_snapshot_2_path)
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(real_snapshot_2_path, str(path)))
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_2_path)
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(real_snapshot_2_path, str(path)))
 
                 # Ensure the previous snapshot has not changed.
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, real_snapshot_1_path)
-                assert_path(self, os.path.join(real_snapshot_1_path, str(
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
+                assert_paths_identical(self, os.path.join(real_snapshot_1_path, str(
                     path)), os.path.join(source_path, str(path)))
 
     def test_backup_with_unavailable_source(self):
@@ -240,22 +207,9 @@ class BackupTest(TestCase):
 
 class RestoreTest(TestCase):
     def test_restore_all(self):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', 'sub'))
-            with open(os.path.join(target_path, 'latest', 'sub', sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            build_files_stage_1(target_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -268,7 +222,7 @@ class RestoreTest(TestCase):
 
                 result = restore(configuration)
                 self.assertTrue(result)
-                assert_path(self, source_path, os.path.join(
+                assert_paths_identical(self, source_path, os.path.join(
                     target_path, 'latest'))
 
     @parameterized.expand([
@@ -276,22 +230,11 @@ class RestoreTest(TestCase):
         (DirectoryPath('/sub/'),),
     ])
     def test_restore_with_directory_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', str(path)))
-            with open(os.path.join(target_path, 'latest', str(path), sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            latest_path = os.path.join(target_path, 'latest')
+            os.makedirs(latest_path)
+            build_files_stage_1(latest_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -305,32 +248,21 @@ class RestoreTest(TestCase):
                 result = restore(configuration, path)
                 self.assertTrue(result)
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, os.path.join(
+                    assert_paths_identical(self, source_path, os.path.join(
                         target_path, 'latest'))
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(target_path, 'latest', str(path)))
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(target_path, 'latest', str(path)))
 
     @parameterized.expand([
         (FilePath('sub/some.file.in.subdirectory'),),
         (FilePath('/sub/some.file.in.subdirectory'),),
     ])
     def test_restore_with_file_path(self, path):
-        file_name = 'some.file'
-        file_contents = 'This is just some file...'
-        sub_file_name = 'some.file.in.subdirectory'
-        sub_file_contents = 'This is just some other file in a subdirectory...'
-
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            # Create target content.
-            os.makedirs(os.path.join(target_path, 'latest'))
-            with open(os.path.join(target_path, 'latest', file_name), mode='w+t') as f:
-                f.write(file_contents)
-                f.flush()
-            os.makedirs(os.path.join(target_path, 'latest', str(path)))
-            with open(os.path.join(target_path, 'latest', str(path), sub_file_name), mode='w+t') as f:
-                f.write(sub_file_contents)
-                f.flush()
+            latest_path = os.path.join(target_path, 'latest')
+            os.makedirs(latest_path)
+            build_files_stage_1(latest_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -344,10 +276,10 @@ class RestoreTest(TestCase):
                 result = restore(configuration, path)
                 self.assertTrue(result)
                 with self.assertRaises(AssertionError):
-                    assert_path(self, source_path, os.path.join(
+                    assert_paths_identical(self, source_path, os.path.join(
                         target_path, 'latest'))
-                assert_path(self, os.path.join(source_path, str(path)),
-                            os.path.join(target_path, 'latest', str(path)))
+                assert_paths_identical(self, os.path.join(source_path, str(path)),
+                                       os.path.join(target_path, 'latest', str(path)))
 
     def test_restore_with_unavailable_source(self):
         # Create the source directory.

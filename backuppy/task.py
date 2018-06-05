@@ -7,6 +7,28 @@ from backuppy.config import Configuration
 from backuppy.location import new_snapshot_name, Path, FilePath, DirectoryPath
 
 
+def rsync_args(configuration, origin, destination, path=None):
+    """Build the arguments to an rsync transfer."""
+    args = ['rsync', '-ar', '--numeric-ids']
+    ssh_options = configuration.ssh_options()
+    if ssh_options:
+        ssh_args = []
+        for option, value in ssh_options.items():
+            ssh_args.append('-o %s=%s' % (option, value))
+        args.append('-e')
+        args.append('ssh %s' % ' '.join(ssh_args))
+    if configuration.verbose:
+        args.append('--verbose')
+        args.append('--progress')
+    args.append(origin.to_rsync(path))
+    if isinstance(path, FilePath):
+        args.append(destination.to_rsync(DirectoryPath(
+            os.path.dirname(str(path)) + '/')))
+    else:
+        args.append(destination.to_rsync(path))
+    return args
+
+
 def backup(configuration, path=None):
     """Start a new back-up.
 
@@ -34,18 +56,7 @@ def backup(configuration, path=None):
     snapshot_name = new_snapshot_name()
     target.snapshot(snapshot_name)
 
-    args = ['rsync', '-ar', '--numeric-ids',
-            '-e', 'ssh -o StrictHostKeyChecking=yes']
-    if configuration.verbose:
-        args.append('--verbose')
-        args.append('--progress')
-    args.append(source.to_rsync(path))
-    if isinstance(path, FilePath):
-        args.append(target.to_rsync(DirectoryPath(
-            os.path.dirname(str(path)) + '/')))
-    else:
-        args.append(target.to_rsync(path))
-    subprocess.call(args)
+    subprocess.call(rsync_args(configuration, source, target, path))
 
     notifier.confirm('Back-up %s complete.' % configuration.name)
 
@@ -77,18 +88,7 @@ def restore(configuration, path=None):
 
     notifier.inform('Restoring %s...' % configuration.name)
 
-    args = ['rsync', '-ar', '--numeric-ids',
-            '-e', 'ssh -o StrictHostKeyChecking=yes']
-    if configuration.verbose:
-        args.append('--verbose')
-        args.append('--progress')
-    args.append(target.to_rsync(path))
-    if isinstance(path, FilePath):
-        args.append(source.to_rsync(DirectoryPath(
-            os.path.dirname(str(path)) + '/')))
-    else:
-        args.append(source.to_rsync(path))
-    subprocess.call(args)
+    subprocess.call(rsync_args(configuration, target, source, path))
 
     notifier.confirm('Restoration of back-up %s complete.' %
                      configuration.name)

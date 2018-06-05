@@ -6,12 +6,12 @@ from logging import config as logging_config
 
 import yaml
 
-from backuppy.location import Source, Target
+from backuppy.location import Source, Target, SshOptionsProvider
 from backuppy.notifier import GroupedNotifiers, Notifier, QuietNotifier
 from backuppy.plugin import new_source, new_target, new_notifier
 
 
-class Configuration(object):
+class Configuration(SshOptionsProvider):
     """Provides back-up configuration."""
 
     def __init__(self, name, working_directory=None, verbose=False, interactive=False):
@@ -116,6 +116,9 @@ class Configuration(object):
         assert isinstance(source, Source)
         if self._source is not None:
             raise AttributeError('A source has already been set.')
+        if isinstance(source, SshOptionsProvider) and isinstance(self._target, SshOptionsProvider):
+            raise AttributeError(
+                'The source and target cannot both be SHH locations.')
         self._source = source
 
     @property
@@ -138,6 +141,9 @@ class Configuration(object):
         assert isinstance(target, Target)
         if self._target is not None:
             raise AttributeError('A target has already been set.')
+        if isinstance(target, SshOptionsProvider) and isinstance(self._source, SshOptionsProvider):
+            raise AttributeError(
+                'The target and source cannot both be SHH locations.')
         self._target = target
 
     @property
@@ -147,6 +153,14 @@ class Configuration(object):
         :return: logging.Logger
         """
         return self._logger
+
+    def ssh_options(self):
+        """Build the SSH options for this configuration."""
+        ssh_location = self._source if isinstance(self._source, SshOptionsProvider) else self._target if isinstance(
+            self._target, SshOptionsProvider) else None
+        if ssh_location is None:
+            return {}
+        return ssh_location.ssh_options()
 
 
 def from_configuration_data(configuration_file_path, data, verbose=None, interactive=None):
