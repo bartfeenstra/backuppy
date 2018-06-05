@@ -120,7 +120,7 @@ class SshLocationContainer(object):
                             (self._mount_point, self.TARGET_PATH)]
         self.stop()
         subprocess.call(['docker', 'run', '-d', '--name',
-                         self.NAME, *docker_args, 'backuppy_ssh_location'])
+                         self.NAME] + docker_args + ['backuppy_ssh_location'])
         self._started = True
         self.await()
         subprocess.call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' % self.known_hosts(
@@ -172,7 +172,7 @@ class SshLocationContainer(object):
         if self._known_hosts:
             return self._known_hosts
 
-        self._known_hosts = NamedTemporaryFile(mode='r+', buffering=1)
+        self._known_hosts = NamedTemporaryFile(mode='r+')
         self._known_hosts.write(self.fingerprint)
         self._known_hosts.flush()
         return self._known_hosts

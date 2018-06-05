@@ -1,5 +1,4 @@
 import os
-from tempfile import TemporaryDirectory
 from unittest import TestCase
 
 from backuppy.config import Configuration
@@ -7,6 +6,11 @@ from backuppy.location import PathSource
 from backuppy.notifier import Notifier
 from backuppy.task import backup
 from backuppy.tests import SshLocationContainer, assert_paths_identical, build_files_stage_1
+
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from backports.tempfile import TemporaryDirectory
 
 try:
     from unittest.mock import Mock
