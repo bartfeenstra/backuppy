@@ -2,10 +2,42 @@ import os
 import subprocess
 from tempfile import NamedTemporaryFile
 
+from backuppy.location import SshTarget
+
 RESOURCE_PATH = '/'.join(
     (os.path.dirname(os.path.abspath(__file__)), 'resources'))
 
 CONFIGURATION_PATH = '/'.join((RESOURCE_PATH, 'configuration'))
+
+
+def build_files_stage_1(path):
+    """Build a directory structure with files to back up.
+
+    :param path: str
+    """
+    with open(os.path.join(path, 'some.file'), mode='w+t') as f:
+        f.write('This is just some file...')
+        f.flush()
+    os.makedirs(os.path.join(path, 'sub'))
+    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
+        f.write('This is just some other file in a subdirectory...')
+        f.flush()
+
+
+def build_files_stage_2(path):
+    """Extend a directory structure with files to back up.
+
+    This should be called after build_files_stage_1().
+
+    :param path: str
+    """
+    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
+        f.write(
+            'This is just some other file in a subdirectory that we made some changes to...')
+        f.flush()
+    with open(os.path.join(path, 'some.later.file'), mode='w+t') as f:
+        f.write('These contents were added much later.')
+        f.flush()
 
 
 def assert_paths_identical(test, source_path, target_path):
@@ -57,20 +89,23 @@ def assert_file(test, source_f, target_f):
     test.assertEquals(source_f.read(), target_f.read())
 
 
-class SshTargetContainer(object):
-    """Run a Docker container to serve as an SSH target."""
+class SshLocationContainer(object):
+    """Run a Docker container to serve as an SSH location."""
 
     NAME = 'backuppy_test'
     PORT = 22
     USERNAME = 'root'
     PASSWORD = 'root'
     IDENTITY = os.path.join(RESOURCE_PATH, 'id_rsa')
+    TARGET_PATH = '/backuppy'
 
-    def __init__(self):
+    def __init__(self, mount_point=None):
         """Initialize a new instance."""
         self._started = False
         self._ip = None
         self._fingerprint = None
+        self._known_hosts = None
+        self._mount_point = mount_point
 
     def _ensure_started(self):
         """Ensure the container has been started."""
@@ -79,20 +114,26 @@ class SshTargetContainer(object):
 
     def start(self):
         """Start the container."""
+        docker_args = []
+        if self._mount_point is not None:
+            docker_args += ['-v', '%s:%s' %
+                            (self._mount_point, self.TARGET_PATH)]
         self.stop()
         subprocess.call(['docker', 'run', '-d', '--name',
-                         self.NAME, 'rastasheep/ubuntu-sshd:18.04'])
+                         self.NAME, *docker_args, 'backuppy_ssh_location'])
         self._started = True
         self.await()
-        with self.known_hosts() as f:
-            subprocess.call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' %
-                             f.name, '%s.pub' % self.IDENTITY, '%s@%s:~/.ssh/authorized_keys' % (self.USERNAME, self.ip)])
+        subprocess.call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' % self.known_hosts(
+        ).name, '%s.pub' % self.IDENTITY, '%s@%s:~/.ssh/authorized_keys' % (self.USERNAME, self.ip)])
 
     def stop(self):
         """Stop the container."""
+        if not self._started:
+            return
         self._started = False
         subprocess.call(['docker', 'stop', self.NAME])
         subprocess.call(['docker', 'container', 'rm', self.NAME])
+        self._known_hosts.close()
 
     @property
     def ip(self):
@@ -128,11 +169,21 @@ class SshTargetContainer(object):
 
         :return: File
         """
-        f = NamedTemporaryFile(mode='r+')
-        f.write(self.fingerprint)
-        f.flush()
-        return f
+        if self._known_hosts:
+            return self._known_hosts
+
+        self._known_hosts = NamedTemporaryFile(mode='r+', buffering=1)
+        self._known_hosts.write(self.fingerprint)
+        self._known_hosts.flush()
+        return self._known_hosts
 
     def await(self):
         """Wait until the container is ready."""
         subprocess.call(['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
+
+    def target(self, configuration):
+        """Get the back-up target to this container.
+
+        :return: backuppy.location.Target
+        """
+        return SshTarget(configuration.notifier, self.USERNAME, self.ip, self.TARGET_PATH, identity=self.IDENTITY, host_keys=self.known_hosts().name)

@@ -42,6 +42,19 @@ def _new_snapshot_args(name):
     ]
 
 
+class SshOptionsProvider(object):
+    """Provide SSH options."""
+
+    def ssh_options(self):
+        """Build SSH options.
+
+        :return: Dict[str, str]
+        """
+        return {
+            'StrictHostKeyChecking': 'yes',
+        }
+
+
 class Path(six.with_metaclass(ABCMeta), object):
     """Define a back-up path."""
 
@@ -223,7 +236,7 @@ class AskPolicy(RejectPolicy):
             RejectPolicy.missing_host_key(self, client, hostname, key)
 
 
-class SshTarget(Target):
+class SshTarget(Target, SshOptionsProvider):
     """Provide a target over SSH."""
 
     def __init__(self, notifier, user, host, path, port=22, identity=None, host_keys=None, interactive=False):
@@ -334,7 +347,18 @@ class SshTarget(Target):
         parts = [self.path, 'latest/']
         if path:
             parts.append(str(path))
-        return '%s@%s:%d%s' % (self.user, self.host, self.port, os.path.join(*parts))
+        return '%s@%s:%s' % (self.user, self.host, os.path.join(*parts))
+
+    def ssh_options(self):
+        """Build SSH options.
+
+        :return: Dict[str, str]
+        """
+        options = SshOptionsProvider.ssh_options(self)
+        options['Port'] = str(self.port)
+        options['UserKnownHostsFile'] = self._host_keys
+        options['IdentityFile'] = self._identity
+        return options
 
 
 class FirstAvailableTarget(Target):

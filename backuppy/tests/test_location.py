@@ -8,7 +8,7 @@ from paramiko import SSHException, SSHClient, PKey
 
 from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
 from backuppy.notifier import Notifier
-from backuppy.tests import SshTargetContainer
+from backuppy.tests import SshLocationContainer
 
 try:
     from unittest.mock import Mock, patch
@@ -120,7 +120,23 @@ class SshTargetTest(TestCase):
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
         self.assertEquals(
-            sut.to_rsync(), 'bart@example.com:666/var/cache/latest/')
+            sut.to_rsync(), 'bart@example.com:/var/cache/latest/')
+
+    def test_ssh_options(self):
+        notifier = Mock(Notifier)
+        user = 'bart'
+        host = 'example.com'
+        port = 666
+        path = '/var/cache'
+        sut = SshTarget(notifier, user, host, path, port)
+        expected_ssh_options = {
+            'IdentityFile': None,
+            'Port': str(port),
+            'StrictHostKeyChecking': 'yes',
+            'UserKnownHostsFile': None,
+        }
+        self.assertEquals(
+            sut.ssh_options(), expected_ssh_options)
 
     @patch('paramiko.SSHClient', autospec=True)
     def test_is_available(self, m):
@@ -177,7 +193,7 @@ class SshTargetTest(TestCase):
 
 class SshTargetIntegrationTest(TestCase):
     def setUp(self):
-        self._container = SshTargetContainer()
+        self._container = SshLocationContainer()
         self._container.start()
 
     def tearDown(self):

@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 from backuppy.location import PathSource, PathTarget, FilePath, DirectoryPath
 from backuppy.task import backup, restore
-from backuppy.tests import assert_paths_identical
+from backuppy.tests import assert_paths_identical, build_files_stage_1, build_files_stage_2
 
 try:
     from unittest.mock import Mock
@@ -21,25 +21,6 @@ except ImportError:
 
 from backuppy.config import Configuration
 from backuppy.notifier import Notifier
-
-
-def build_files_stage_1(path):
-    with open(os.path.join(path, 'some.file'), mode='w+t') as f:
-        f.write('This is just some file...')
-        f.flush()
-    os.makedirs(os.path.join(path, 'sub'))
-    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
-        f.write('This is just some other file in a subdirectory...')
-        f.flush()
-
-
-def build_files_stage_2(path):
-    with open(os.path.join(path, 'sub', 'some.file.in.subdirectory'), mode='w+t') as f:
-        f.write('This is just some other file in a subdirectory that we made some changes to...')
-        f.flush()
-    with open(os.path.join(path, 'some.later.file'), mode='w+t') as f:
-        f.write('These contents were added much later.')
-        f.flush()
 
 
 class BackupTest(TestCase):
@@ -92,9 +73,11 @@ class BackupTest(TestCase):
                     target_path, 'latest'), source_path)
                 # Ensure the changes made to the source did not affect the previous snapshots.
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, real_snapshot_1_path, source_path)
+                    assert_paths_identical(
+                        self, real_snapshot_1_path, source_path)
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, real_snapshot_2_path, source_path)
+                    assert_paths_identical(
+                        self, real_snapshot_2_path, source_path)
 
     @parameterized.expand([
         (DirectoryPath('sub/'),),
@@ -120,7 +103,8 @@ class BackupTest(TestCase):
                 real_snapshot_1_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, source_path, real_snapshot_1_path)
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
                 assert_paths_identical(self, os.path.join(source_path, str(path)),
                                        os.path.join(real_snapshot_1_path, str(path)))
 
@@ -133,7 +117,8 @@ class BackupTest(TestCase):
                 real_snapshot_2_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, source_path, real_snapshot_2_path)
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_2_path)
                 assert_paths_identical(self, os.path.join(source_path, str(path)),
                                        os.path.join(real_snapshot_2_path, str(path)))
 
@@ -165,7 +150,8 @@ class BackupTest(TestCase):
                 real_snapshot_1_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, source_path, real_snapshot_1_path)
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
                 assert_paths_identical(self, os.path.join(source_path, str(path)),
                                        os.path.join(real_snapshot_1_path, str(path)))
 
@@ -178,13 +164,15 @@ class BackupTest(TestCase):
                 real_snapshot_2_path = subprocess.check_output(['readlink', '-f', 'latest'], cwd=target_path).decode(
                     'utf-8').strip()
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, source_path, real_snapshot_2_path)
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_2_path)
                 assert_paths_identical(self, os.path.join(source_path, str(path)),
                                        os.path.join(real_snapshot_2_path, str(path)))
 
                 # Ensure the previous snapshot has not changed.
                 with self.assertRaises(AssertionError):
-                    assert_paths_identical(self, source_path, real_snapshot_1_path)
+                    assert_paths_identical(
+                        self, source_path, real_snapshot_1_path)
                 assert_paths_identical(self, os.path.join(real_snapshot_1_path, str(
                     path)), os.path.join(source_path, str(path)))
 
