@@ -1,5 +1,6 @@
 name: Test
 verbose: true
+interactive: false
 notifications:
   - type: stdio
 source:
