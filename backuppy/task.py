@@ -7,9 +7,10 @@ from backuppy.config import Configuration
 from backuppy.location import new_snapshot_name, Path, FilePath, DirectoryPath
 
 
-def rsync_args(configuration, origin, destination, path=None):
-    """Build the arguments to an rsync transfer."""
+def rsync(configuration, origin, destination, path=None):
+    """Invoke rsync."""
     args = ['rsync', '-ar', '--numeric-ids']
+
     ssh_options = configuration.ssh_options()
     if ssh_options:
         ssh_args = []
@@ -17,16 +18,22 @@ def rsync_args(configuration, origin, destination, path=None):
             ssh_args.append('-o %s=%s' % (option, value))
         args.append('-e')
         args.append('ssh %s' % ' '.join(ssh_args))
+
     if configuration.verbose:
         args.append('--verbose')
         args.append('--progress')
+
     args.append(origin.to_rsync(path))
+
     if isinstance(path, FilePath):
         args.append(destination.to_rsync(DirectoryPath(
             os.path.dirname(str(path)) + '/')))
     else:
         args.append(destination.to_rsync(path))
-    return args
+
+    exit_code = subprocess.call(args)
+
+    return exit_code == 0
 
 
 def backup(configuration, path=None):
@@ -56,11 +63,14 @@ def backup(configuration, path=None):
     snapshot_name = new_snapshot_name()
     target.snapshot(snapshot_name)
 
-    subprocess.call(rsync_args(configuration, source, target, path))
+    result = rsync(configuration, source, target, path)
 
-    notifier.confirm('Back-up %s complete.' % configuration.name)
+    if result:
+        notifier.confirm('Back-up %s complete.' % configuration.name)
+    else:
+        notifier.confirm('Back-up %s failed.' % configuration.name)
 
-    return True
+    return result
 
 
 def restore(configuration, path=None):
@@ -88,9 +98,11 @@ def restore(configuration, path=None):
 
     notifier.inform('Restoring %s...' % configuration.name)
 
-    subprocess.call(rsync_args(configuration, target, source, path))
+    result = rsync(configuration, target, source, path)
 
-    notifier.confirm('Restoration of back-up %s complete.' %
-                     configuration.name)
+    if result:
+        notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
+    else:
+        notifier.alert('Restoration of back-up %s failed.' % configuration.name)
 
-    return True
+    return result

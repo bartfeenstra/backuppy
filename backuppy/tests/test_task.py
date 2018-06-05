@@ -209,7 +209,9 @@ class RestoreTest(TestCase):
     def test_restore_all(self):
         # Create the target directory.
         with TemporaryDirectory() as target_path:
-            build_files_stage_1(target_path)
+            latest_path = os.path.join(target_path, 'latest')
+            os.makedirs(latest_path)
+            build_files_stage_1(latest_path)
 
             # Create the source directory.
             with TemporaryDirectory() as source_path:
@@ -222,6 +224,7 @@ class RestoreTest(TestCase):
 
                 result = restore(configuration)
                 self.assertTrue(result)
+                subprocess.call(['ls', '-la', source_path])
                 assert_paths_identical(self, source_path, os.path.join(
                     target_path, 'latest'))
 
