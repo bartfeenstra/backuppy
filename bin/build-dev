@@ -4,6 +4,9 @@ set -e
 
 cd `dirname "$0"`/..
 
+# Set file modes.
+chmod u=rw,go= backuppy/tests/resources/id_rsa*
+
 # Set up wait-for-it.
 if [ ! -f ./bin/wait-for-it ]; then
     curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh > ./bin/wait-for-it
