@@ -64,7 +64,7 @@ class Path(six.with_metaclass(ABCMeta), object):
 
         :return: str
         """
-        pass
+        pass  # pragma: no cover
 
 
 class FilePath(Path):
@@ -118,7 +118,7 @@ class Location(six.with_metaclass(ABCMeta), object):
 
         :return: bool
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def to_rsync(self, path=None):
@@ -127,7 +127,7 @@ class Location(six.with_metaclass(ABCMeta), object):
         :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        pass
+        pass  # pragma: no cover
 
 
 class Source(Location):
@@ -145,7 +145,7 @@ class Target(Location):
 
         :param name: str
         """
-        pass
+        pass  # pragma: no cover
 
 
 class PathLocation(Location):

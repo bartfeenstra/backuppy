@@ -87,6 +87,15 @@ class FromConfigurationData(TestCase):
             with self.assertRaises(ValueError):
                 from_configuration_data(f.name, configuration)
 
+    def test_interactive_non_boolean(self):
+        with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
+            configuration = json.load(f)
+        configuration['interactive'] = 666
+        with NamedTemporaryFile(mode='w+t') as f:
+            json.dump(configuration, f)
+            with self.assertRaises(ValueError):
+                from_configuration_data(f.name, configuration)
+
     def test_notifier_type_missing(self):
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
             configuration = json.load(f)
@@ -159,6 +168,7 @@ class FromJsonTest(TestCase):
         with open('%s/backuppy.json' % CONFIGURATION_PATH) as f:
             configuration = from_json(f)
         self.assertTrue(configuration.verbose)
+        self.assertFalse(configuration.interactive)
 
 
 class FromYamlTest(TestCase):
@@ -166,3 +176,4 @@ class FromYamlTest(TestCase):
         with open('%s/backuppy.yml' % CONFIGURATION_PATH) as f:
             configuration = from_yaml(f)
         self.assertTrue(configuration.verbose)
+        self.assertFalse(configuration.interactive)

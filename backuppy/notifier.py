@@ -37,7 +37,7 @@ class Notifier(with_metaclass(ABCMeta), object):
 
         :param message: str
         """
-        pass
+        pass  # pragma: no cover
 
 
 class GroupedNotifiers(Notifier):
