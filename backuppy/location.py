@@ -1,14 +1,11 @@
 """Provide back-up locations."""
-import abc
 import os
 import socket
 import subprocess
-from abc import ABCMeta
 from binascii import b2a_hex
 from time import strftime, gmtime
 
 import paramiko
-import six
 from paramiko import SSHException, RejectPolicy
 
 from backuppy.cli.input import ask_confirm
@@ -55,16 +52,15 @@ class SshOptionsProvider(object):
         }
 
 
-class Path(six.with_metaclass(ABCMeta), object):
+class Path(object):
     """Define a back-up path."""
 
-    @abc.abstractmethod
     def __str__(self):
         """Render the path as a string.
 
         :return: str
         """
-        pass  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class FilePath(Path):
@@ -109,25 +105,23 @@ class DirectoryPath(Path):
         return self._path
 
 
-class Location(six.with_metaclass(ABCMeta), object):
+class Location(object):
     """Provide a backup location."""
 
-    @abc.abstractmethod
     def is_available(self):
         """Check if the target is available.
 
         :return: bool
         """
-        pass  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
-    @abc.abstractmethod
     def to_rsync(self, path=None):
         """Build this location's rsync path.
 
         :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        pass  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class Source(Location):
@@ -139,13 +133,12 @@ class Source(Location):
 class Target(Location):
     """Provide a backup target."""
 
-    @abc.abstractmethod
     def snapshot(self, name):
         """Create a new snapshot.
 
         :param name: str
         """
-        pass  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class PathLocation(Location):
