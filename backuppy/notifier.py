@@ -121,7 +121,7 @@ class CommandNotifier(Notifier):
             args = self._fallback_args
         args = map(lambda x: x.replace('{message}', message), args)
         # Convert to a list so we can easily assert invocations.
-        subprocess.call(list(args))
+        subprocess.check_call(list(args))
 
     def state(self, message):
         """Send a notification that may be ignored.

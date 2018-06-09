@@ -26,7 +26,7 @@ def rsync(configuration, origin, destination, path=None):
     args.append(origin.to_rsync(path))
     args.append(destination.to_rsync(path))
 
-    exit_code = subprocess.call(args)
+    exit_code = subprocess.check_call(args)
 
     return exit_code == 0
 
