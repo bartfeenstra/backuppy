@@ -101,10 +101,8 @@ def restore(configuration, path=None):
     result = rsync(configuration, target, source, path)
 
     if result:
-        notifier.confirm('Restoration of back-up %s complete.' %
-                         configuration.name)
+        notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
     else:
-        notifier.alert('Restoration of back-up %s failed.' %
-                       configuration.name)
+        notifier.alert('Restoration of back-up %s failed.' % configuration.name)
 
     return result
