@@ -30,11 +30,11 @@ def _new_snapshot_args(name):
     return [
         # If the given snapshot does not exist, prepopulate the new snapshot with an archived, linked, recursive copy of
         # the previous snapshot if it exists, or create a new, empty snapshot otherwise.
-        ['bash', '-c', '[ ! -d %s ] && [ -d latest ] && cp -al `readlink latest` %s' %
+        ['bash', '-c', 'if [[ ! -d %s && -d latest ]]; then cp -al `readlink latest` %s; fi' %
          (name, name)],
 
         # Create the new snapshot directory if it does not exist.
-        ['bash', '-c', '[ ! -d %s ] && mkdir %s' % (name, name)],
+        ['bash', '-c', 'if [ ! -d %s ]; then mkdir %s; fi' % (name, name)],
 
         # Re-link the `./latest` symlink.
         ['rm', '-f', 'latest'],
@@ -218,7 +218,7 @@ class PathTarget(Target, PathLocation):
         :param name: str
         """
         for args in _new_snapshot_args(name):
-            subprocess.call(args, cwd=self._path)
+            subprocess.check_call(args, cwd=self._path)
 
 
 class AskPolicy(RejectPolicy):

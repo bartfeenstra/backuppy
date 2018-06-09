@@ -28,7 +28,7 @@ class NewSnapshotArgsTest(TestCase):
         snapshot_name = 'foo_bar'
         with TemporaryDirectory() as path:
             for args in _new_snapshot_args(snapshot_name):
-                subprocess.call(args, cwd=path)
+                subprocess.check_call(args, cwd=path)
             self.assertTrue(os.path.exists('/'.join([path, snapshot_name])))
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
 

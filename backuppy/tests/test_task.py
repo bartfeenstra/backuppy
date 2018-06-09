@@ -224,7 +224,7 @@ class RestoreTest(TestCase):
 
                 result = restore(configuration)
                 self.assertTrue(result)
-                subprocess.call(['ls', '-la', source_path])
+                subprocess.check_call(['ls', '-la', source_path])
                 assert_paths_identical(self, source_path, os.path.join(
                     target_path, 'latest'))
 

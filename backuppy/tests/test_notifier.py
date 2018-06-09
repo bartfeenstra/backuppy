@@ -59,7 +59,7 @@ class GroupedNotifiersTest(TestCase):
 
 
 class CommandNotifierTest(TestCase):
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_state(self, m):
         state_args = ['some', 'state']
         fallback_args = ['some', 'fallback']
@@ -69,7 +69,7 @@ class CommandNotifierTest(TestCase):
         sut.state(message)
         m.assert_called_with(state_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_state_should_fall_back(self, m):
         fallback_args = ['some', 'fallback']
         sut = CommandNotifier(fallback_args=fallback_args + ['{message}'])
@@ -77,7 +77,7 @@ class CommandNotifierTest(TestCase):
         sut.state(message)
         m.assert_called_with(fallback_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_inform(self, m):
         inform_args = ['some', 'inform']
         fallback_args = ['some', 'fallback']
@@ -87,7 +87,7 @@ class CommandNotifierTest(TestCase):
         sut.inform(message)
         m.assert_called_with(inform_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_inform_should_fall_back(self, m):
         fallback_args = ['some', 'fallback']
         sut = CommandNotifier(fallback_args=fallback_args + ['{message}'])
@@ -95,7 +95,7 @@ class CommandNotifierTest(TestCase):
         sut.inform(message)
         m.assert_called_with(fallback_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_confirm(self, m):
         confirm_args = ['some', 'confirm']
         fallback_args = ['some', 'fallback']
@@ -105,7 +105,7 @@ class CommandNotifierTest(TestCase):
         sut.confirm(message)
         m.assert_called_with(confirm_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_confirm_should_fall_back(self, m):
         fallback_args = ['some', 'fallback']
         sut = CommandNotifier(fallback_args=fallback_args + ['{message}'])
@@ -113,7 +113,7 @@ class CommandNotifierTest(TestCase):
         sut.confirm(message)
         m.assert_called_with(fallback_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_alert(self, m):
         alert_args = ['some', 'alert']
         fallback_args = ['some', 'fallback']
@@ -123,7 +123,7 @@ class CommandNotifierTest(TestCase):
         sut.alert(message)
         m.assert_called_with(alert_args + [message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_alert_should_fall_back(self, m):
         fallback_args = ['some', 'fallback']
         sut = CommandNotifier(fallback_args=fallback_args + ['{message}'])
@@ -165,7 +165,7 @@ class CommandNotifierTest(TestCase):
 
 
 class NotifySendNotifierTest(TestCase):
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_state(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
@@ -173,7 +173,7 @@ class NotifySendNotifierTest(TestCase):
         m.assert_called_with(
             ['notify-send', '-c', 'backuppy', '-u', 'low', message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_inform(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
@@ -181,7 +181,7 @@ class NotifySendNotifierTest(TestCase):
         m.assert_called_with(
             ['notify-send', '-c', 'backuppy', '-u', 'normal', message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_confirm(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
@@ -189,7 +189,7 @@ class NotifySendNotifierTest(TestCase):
         m.assert_called_with(
             ['notify-send', '-c', 'backuppy', '-u', 'normal', message])
 
-    @patch('subprocess.call')
+    @patch('subprocess.check_call')
     def test_alert(self, m):
         sut = NotifySendNotifier()
         message = 'Something happened!'
