@@ -119,11 +119,11 @@ class SshLocationContainer(object):
             docker_args += ['-v', '%s:%s' %
                             (self._mount_point, self.TARGET_PATH)]
         self.stop()
-        subprocess.call(['docker', 'run', '-d', '--name',
-                         self.NAME] + docker_args + ['backuppy_ssh_location'])
+        subprocess.check_call(['docker', 'run', '-d', '--name',
+                               self.NAME] + docker_args + ['backuppy_ssh_location'])
         self._started = True
         self.await()
-        subprocess.call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' % self.known_hosts(
+        subprocess.check_call(['sshpass', '-p', self.PASSWORD, 'scp', '-o', 'UserKnownHostsFile=%s' % self.known_hosts(
         ).name, '%s.pub' % self.IDENTITY, '%s@%s:~/.ssh/authorized_keys' % (self.USERNAME, self.ip)])
 
     def stop(self):
@@ -131,8 +131,8 @@ class SshLocationContainer(object):
         if not self._started:
             return
         self._started = False
-        subprocess.call(['docker', 'stop', self.NAME])
-        subprocess.call(['docker', 'container', 'rm', self.NAME])
+        subprocess.check_call(['docker', 'stop', self.NAME])
+        subprocess.check_call(['docker', 'container', 'rm', self.NAME])
         self._known_hosts.close()
 
     @property
@@ -179,7 +179,8 @@ class SshLocationContainer(object):
 
     def await(self):
         """Wait until the container is ready."""
-        subprocess.call(['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
+        subprocess.check_call(
+            ['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
 
     def target(self, configuration):
         """Get the back-up target to this container.

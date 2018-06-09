@@ -30,7 +30,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def setup(app):
     """Register this configuration as a Sphinx extension."""
-    subprocess.call(['sphinx-apidoc', '-o', os.path.join(ROOT_PATH, 'docs'), 'backuppy'])
+    subprocess.check_call(['sphinx-apidoc', '-o', os.path.join(ROOT_PATH, 'docs'), 'backuppy'])
 
     with open(os.path.join(ROOT_PATH, 'README.md')) as f:
         readme_rst = convert(f.read())

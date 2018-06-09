@@ -31,7 +31,7 @@ def rsync(configuration, origin, destination, path=None):
     else:
         args.append(destination.to_rsync(path))
 
-    exit_code = subprocess.call(args)
+    exit_code = subprocess.check_call(args)
 
     return exit_code == 0
 
@@ -101,8 +101,10 @@ def restore(configuration, path=None):
     result = rsync(configuration, target, source, path)
 
     if result:
-        notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
+        notifier.confirm('Restoration of back-up %s complete.' %
+                         configuration.name)
     else:
-        notifier.alert('Restoration of back-up %s failed.' % configuration.name)
+        notifier.alert('Restoration of back-up %s failed.' %
+                       configuration.name)
 
     return result
