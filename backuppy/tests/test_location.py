@@ -7,8 +7,7 @@ from unittest import TestCase
 from parameterized import parameterized
 from paramiko import SSHException, SSHClient, PKey
 
-from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy, \
-    FilePath, DirectoryPath
+from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
 from backuppy.notifier import Notifier
 from backuppy.tests import SshLocationContainer
 
@@ -31,36 +30,6 @@ class NewSnapshotArgsTest(TestCase):
                 subprocess.call(args, cwd=path)
             self.assertTrue(os.path.exists('/'.join([path, snapshot_name])))
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
-
-
-class FilePathTest(TestCase):
-    @parameterized.expand([
-        ('hi/there', 'hi/there'),
-        ('hi/there', '/hi/there'),
-    ])
-    def test_str(self, expected, path):
-        sut = FilePath(path)
-        self.assertEqual(expected, str(sut))
-
-    def test_str_should_error_with_trailing_slash(self):
-        path = '/hi/there/'
-        with self.assertRaises(ValueError):
-            FilePath(path)
-
-
-class DirectoryPathTest(TestCase):
-    @parameterized.expand([
-        ('hi/there/', 'hi/there/'),
-        ('hi/there/', '/hi/there/'),
-    ])
-    def test_str(self, expected, path):
-        sut = DirectoryPath(path)
-        self.assertEqual(expected, str(sut))
-
-    def test_str_should_error_without_trailing_slash(self):
-        path = '/hi/there'
-        with self.assertRaises(ValueError):
-            DirectoryPath(path)
 
 
 class PathLocationTest(TestCase):
@@ -146,8 +115,8 @@ class AskPolicyTest(TestCase):
 class SshTargetTest(TestCase):
     @parameterized.expand([
         (None,),
-        (FilePath('some.file'),),
-        (DirectoryPath('some.directory/'),),
+        ('some.file',),
+        ('some.directory/',),
     ])
     def test_to_rsync(self, subpath):
         notifier = Mock(Notifier)
