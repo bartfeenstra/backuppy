@@ -3,12 +3,9 @@ from __future__ import print_function
 
 import subprocess
 import sys
-from abc import ABCMeta
-
-from six import with_metaclass
 
 
-class Notifier(with_metaclass(ABCMeta), object):
+class Notifier(object):
     """Define a notifier."""
 
     def state(self, message):
@@ -16,28 +13,28 @@ class Notifier(with_metaclass(ABCMeta), object):
 
         :param message: str
         """
-        pass
+        raise NotImplementedError()  # pragma: no cover
 
     def inform(self, message):
         """Send an informative notification.
 
         :param message: str
         """
-        pass
+        raise NotImplementedError()  # pragma: no cover
 
     def confirm(self, message):
         """Send a confirmation/success notification.
 
         :param message: str
         """
-        pass
+        raise NotImplementedError()  # pragma: no cover
 
     def alert(self, message):
         """Send an error notification.
 
         :param message: str
         """
-        pass  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class GroupedNotifiers(Notifier):
@@ -267,6 +264,27 @@ class QuietNotifier(Notifier):
         :param notifier: Notifier
         """
         self._notifier = notifier
+
+    def state(self, message):
+        """Send a notification that may be ignored.
+
+        :param message: str
+        """
+        pass
+
+    def inform(self, message):
+        """Send an informative notification.
+
+        :param message: str
+        """
+        pass
+
+    def confirm(self, message):
+        """Send a confirmation/success notification.
+
+        :param message: str
+        """
+        pass
 
     def alert(self, message):
         """Send an error notification.
