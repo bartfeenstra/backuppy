@@ -3,8 +3,6 @@ import socket
 import subprocess
 from logging import getLogger
 from unittest import TestCase
-
-from parameterized import parameterized
 from paramiko import SSHException, SSHClient, PKey
 
 from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
@@ -37,7 +35,7 @@ class PathLocationTest(TestCase):
         def snapshot(self, name):
             pass
 
-        def to_rsync(self, path=None):
+        def to_rsync(self):
             pass
 
     def test_is_available(self):
@@ -113,12 +111,7 @@ class AskPolicyTest(TestCase):
 
 
 class SshTargetTest(TestCase):
-    @parameterized.expand([
-        (None,),
-        ('some.file',),
-        ('some.directory/',),
-    ])
-    def test_to_rsync(self, subpath):
+    def test_to_rsync(self):
         notifier = Mock(Notifier)
         user = 'bart'
         host = 'example.com'
@@ -126,10 +119,7 @@ class SshTargetTest(TestCase):
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
         expected = 'bart@example.com:/var/cache/latest/'
-        if subpath is not None:
-            expected += str(subpath)
-        self.assertEquals(
-            sut.to_rsync(path=subpath), expected)
+        self.assertEquals(sut.to_rsync(), expected)
 
     def test_ssh_options(self):
         notifier = Mock(Notifier)

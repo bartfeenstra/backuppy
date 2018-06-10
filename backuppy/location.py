@@ -62,10 +62,9 @@ class Location(object):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[str]
         :return: str
         """
         raise NotImplementedError()  # pragma: no cover
@@ -125,30 +124,23 @@ class PathLocation(Location):
 class PathSource(Source, PathLocation):
     """Provide a local, path-based back-up source."""
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[str]
-        :return: str
+        :return: strF
         """
-        if path:
-            return os.path.join(self._path, path)
         return self._path
 
 
 class PathTarget(Target, PathLocation):
     """Provide a local, path-based back-up target."""
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[str]
         :return: str
         """
-        parts = [self._path, 'latest/']
-        if path:
-            parts.append(path)
-        return os.path.join(*parts)
+        return '%s/%s' % (self._path.rstrip('/'), 'latest/')
 
     def snapshot(self, name):
         """Create a new snapshot.
@@ -275,16 +267,12 @@ class SshTarget(Target, SshOptionsProvider):
         """
         return self._port
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[str]
         :return: str
         """
-        parts = [self.path, 'latest/']
-        if path:
-            parts.append(path)
-        return '%s@%s:%s' % (self.user, self.host, os.path.join(*parts))
+        return '%s@%s:%s/latest/' % (self.user, self.host, self._path.rstrip('/'))
 
     def ssh_options(self):
         """Build SSH options.
@@ -316,13 +304,12 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target() is not None
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[str]
         :return: str
         """
-        return self._get_available_target().to_rsync(path)
+        return self._get_available_target().to_rsync()
 
     def snapshot(self, name):
         """Create a new snapshot.

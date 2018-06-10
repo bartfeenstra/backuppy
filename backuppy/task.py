@@ -1,6 +1,5 @@
 """Code to run back-ups."""
 import subprocess
-import os
 
 from backuppy.config import Configuration
 from backuppy.location import new_snapshot_name
@@ -11,7 +10,7 @@ def rsync(configuration, origin, destination, path=None):
 
     :raise: subprocess.CalledProcessError
     """
-    args = ['rsync', '-ar', '--numeric-ids']
+    args = ['rsync', '-ar', '--numeric-ids', '--relative']
 
     ssh_options = configuration.ssh_options()
     if ssh_options:
@@ -25,8 +24,10 @@ def rsync(configuration, origin, destination, path=None):
         args.append('--verbose')
         args.append('--progress')
 
-    args.append(origin.to_rsync(path))
-    args.append(destination.to_rsync(path))
+    if path is None:
+        path = ''
+    args.append('%s./%s' % (origin.to_rsync(), path))
+    args.append(destination.to_rsync())
 
     subprocess.check_call(args)
 

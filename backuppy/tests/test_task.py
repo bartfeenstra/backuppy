@@ -80,8 +80,8 @@ class BackupTest(TestCase):
                         self, real_snapshot_2_path, source_path)
 
     @parameterized.expand([
+        ('sub',),
         ('sub/',),
-        ('/sub/',),
     ])
     def test_backup_with_directory_path(self, path):
         # Create the source directory.
@@ -125,11 +125,8 @@ class BackupTest(TestCase):
                 # Ensure the previous snapshot has not changed.
                 assert_paths_identical(self, os.path.join(real_snapshot_1_path, path), os.path.join(source_path, path))
 
-    @parameterized.expand([
-        ('sub/some.file.in.subdirectory',),
-        ('/sub/some.file.in.subdirectory',),
-    ])
-    def test_backup_with_file_path(self, path):
+    def test_backup_with_file_path(self):
+        path = 'sub/some.file.in.subdirectory'
         # Create the source directory.
         with TemporaryDirectory() as source_path:
             build_files_stage_1(source_path)
