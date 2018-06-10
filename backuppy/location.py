@@ -52,59 +52,6 @@ class SshOptionsProvider(object):
         }
 
 
-class Path(object):
-    """Define a back-up path."""
-
-    def __str__(self):
-        """Render the path as a string.
-
-        :return: str
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-
-class FilePath(Path):
-    """Define a back-up file."""
-
-    def __init__(self, path):
-        """Initialize a new instance.
-
-        :param path: str
-        """
-        if path.endswith('/'):
-            raise ValueError('A file path must not end with a slash (/).')
-        # Paths are always relative against the target root paths.
-        self._path = path.lstrip('/')
-
-    def __str__(self):
-        """Render the path as a string.
-
-        :return: str
-        """
-        return self._path
-
-
-class DirectoryPath(Path):
-    """Define a back-up directory."""
-
-    def __init__(self, path):
-        """Initialize a new instance.
-
-        :param path: str
-        """
-        if not path.endswith('/'):
-            raise ValueError('A directory path must end with a slash (/).')
-        # Paths are always relative against the target root paths.
-        self._path = path.lstrip('/')
-
-    def __str__(self):
-        """Render the path as a string.
-
-        :return: str
-        """
-        return self._path
-
-
 class Location(object):
     """Provide a backup location."""
 
@@ -115,10 +62,9 @@ class Location(object):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[backuppy.location.Path]
         :return: str
         """
         raise NotImplementedError()  # pragma: no cover
@@ -178,32 +124,23 @@ class PathLocation(Location):
 class PathSource(Source, PathLocation):
     """Provide a local, path-based back-up source."""
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[backuppy.location.Path]
-        :return: str
+        :return: strF
         """
-        assert path is None or isinstance(path, Path)
-        if path:
-            return os.path.join(self._path, str(path))
         return self._path
 
 
 class PathTarget(Target, PathLocation):
     """Provide a local, path-based back-up target."""
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        assert path is None or isinstance(path, Path)
-        parts = [self._path, 'latest/']
-        if path:
-            parts.append(str(path))
-        return os.path.join(*parts)
+        return '%s/%s' % (self._path.rstrip('/'), 'latest/')
 
     def snapshot(self, name):
         """Create a new snapshot.
@@ -330,17 +267,12 @@ class SshTarget(Target, SshOptionsProvider):
         """
         return self._port
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        assert path is None or isinstance(path, Path)
-        parts = [self.path, 'latest/']
-        if path:
-            parts.append(str(path))
-        return '%s@%s:%s' % (self.user, self.host, os.path.join(*parts))
+        return '%s@%s:%s/latest/' % (self.user, self.host, self._path.rstrip('/'))
 
     def ssh_options(self):
         """Build SSH options.
@@ -372,13 +304,12 @@ class FirstAvailableTarget(Target):
         """
         return self._get_available_target() is not None
 
-    def to_rsync(self, path=None):
+    def to_rsync(self):
         """Build this location's rsync path.
 
-        :param path: Optional[backuppy.location.Path]
         :return: str
         """
-        return self._get_available_target().to_rsync(path)
+        return self._get_available_target().to_rsync()
 
     def snapshot(self, name):
         """Create a new snapshot.

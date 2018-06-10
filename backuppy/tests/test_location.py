@@ -3,12 +3,9 @@ import socket
 import subprocess
 from logging import getLogger
 from unittest import TestCase
-
-from parameterized import parameterized
 from paramiko import SSHException, SSHClient, PKey
 
-from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy, \
-    FilePath, DirectoryPath
+from backuppy.location import PathLocation, SshTarget, FirstAvailableTarget, _new_snapshot_args, PathTarget, AskPolicy
 from backuppy.notifier import Notifier
 from backuppy.tests import SshLocationContainer
 
@@ -33,42 +30,12 @@ class NewSnapshotArgsTest(TestCase):
             self.assertTrue(os.path.exists('/'.join([path, 'latest'])))
 
 
-class FilePathTest(TestCase):
-    @parameterized.expand([
-        ('hi/there', 'hi/there'),
-        ('hi/there', '/hi/there'),
-    ])
-    def test_str(self, expected, path):
-        sut = FilePath(path)
-        self.assertEqual(expected, str(sut))
-
-    def test_str_should_error_with_trailing_slash(self):
-        path = '/hi/there/'
-        with self.assertRaises(ValueError):
-            FilePath(path)
-
-
-class DirectoryPathTest(TestCase):
-    @parameterized.expand([
-        ('hi/there/', 'hi/there/'),
-        ('hi/there/', '/hi/there/'),
-    ])
-    def test_str(self, expected, path):
-        sut = DirectoryPath(path)
-        self.assertEqual(expected, str(sut))
-
-    def test_str_should_error_without_trailing_slash(self):
-        path = '/hi/there'
-        with self.assertRaises(ValueError):
-            DirectoryPath(path)
-
-
 class PathLocationTest(TestCase):
     class PathLocation(PathLocation):
         def snapshot(self, name):
             pass
 
-        def to_rsync(self, path=None):
+        def to_rsync(self):
             pass
 
     def test_is_available(self):
@@ -144,12 +111,7 @@ class AskPolicyTest(TestCase):
 
 
 class SshTargetTest(TestCase):
-    @parameterized.expand([
-        (None,),
-        (FilePath('some.file'),),
-        (DirectoryPath('some.directory/'),),
-    ])
-    def test_to_rsync(self, subpath):
+    def test_to_rsync(self):
         notifier = Mock(Notifier)
         user = 'bart'
         host = 'example.com'
@@ -157,10 +119,7 @@ class SshTargetTest(TestCase):
         path = '/var/cache'
         sut = SshTarget(notifier, user, host, path, port)
         expected = 'bart@example.com:/var/cache/latest/'
-        if subpath is not None:
-            expected += str(subpath)
-        self.assertEquals(
-            sut.to_rsync(path=subpath), expected)
+        self.assertEquals(sut.to_rsync(), expected)
 
     def test_ssh_options(self):
         notifier = Mock(Notifier)

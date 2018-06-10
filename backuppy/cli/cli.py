@@ -10,7 +10,6 @@ import yaml
 from backuppy import task
 from backuppy.cli.input import ask_any, ask_confirm, ask_option
 from backuppy.config import from_json, from_yaml
-from backuppy.location import FilePath, DirectoryPath
 from backuppy.notifier import StdioNotifier
 
 FORMAT_JSON_EXTENSIONS = ('json',)
@@ -82,7 +81,7 @@ class FilePathAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         """Invoke the action."""
-        setattr(namespace, self.dest, FilePath(values))
+        setattr(namespace, self.dest, values)
 
 
 class DirectoryPathAction(argparse.Action):
@@ -96,7 +95,7 @@ class DirectoryPathAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         """Invoke the action."""
-        setattr(namespace, self.dest, DirectoryPath(values))
+        setattr(namespace, self.dest, values)
 
 
 def add_configuration_to_parser(parser):
