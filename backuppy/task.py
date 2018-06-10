@@ -1,6 +1,5 @@
 """Code to run back-ups."""
 import subprocess
-
 import os
 
 from backuppy.config import Configuration
@@ -8,7 +7,10 @@ from backuppy.location import new_snapshot_name, Path, FilePath, DirectoryPath
 
 
 def rsync(configuration, origin, destination, path=None):
-    """Invoke rsync."""
+    """Invoke rsync.
+
+    :raise: subprocess.CalledProcessError
+    """
     args = ['rsync', '-ar', '--numeric-ids']
 
     ssh_options = configuration.ssh_options()
@@ -31,9 +33,7 @@ def rsync(configuration, origin, destination, path=None):
     else:
         args.append(destination.to_rsync(path))
 
-    exit_code = subprocess.check_call(args)
-
-    return exit_code == 0
+    subprocess.check_call(args)
 
 
 def backup(configuration, path=None):
@@ -63,14 +63,14 @@ def backup(configuration, path=None):
     snapshot_name = new_snapshot_name()
     target.snapshot(snapshot_name)
 
-    result = rsync(configuration, source, target, path)
-
-    if result:
+    try:
+        rsync(configuration, source, target, path)
         notifier.confirm('Back-up %s complete.' % configuration.name)
-    else:
+        return True
+    except subprocess.CalledProcessError:
+        configuration.logger.exception('An rsync error occurred.')
         notifier.confirm('Back-up %s failed.' % configuration.name)
-
-    return result
+        return False
 
 
 def restore(configuration, path=None):
@@ -98,11 +98,11 @@ def restore(configuration, path=None):
 
     notifier.inform('Restoring %s...' % configuration.name)
 
-    result = rsync(configuration, target, source, path)
-
-    if result:
+    try:
+        rsync(configuration, target, source, path)
         notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
-    else:
+        return True
+    except subprocess.CalledProcessError:
+        configuration.logger.exception('An rsync error occurred.')
         notifier.alert('Restoration of back-up %s failed.' % configuration.name)
-
-    return result
+        return False

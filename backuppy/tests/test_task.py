@@ -10,9 +10,9 @@ from backuppy.task import backup, restore
 from backuppy.tests import assert_paths_identical, build_files_stage_1, build_files_stage_2
 
 try:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock
+    from mock import Mock, patch
 
 try:
     from tempfile import TemporaryDirectory
@@ -204,6 +204,23 @@ class BackupTest(TestCase):
                 result = backup(configuration)
                 self.assertFalse(result)
 
+    @patch('backuppy.task.rsync')
+    def test_backup_with_subprocess_error(self, m):
+        m.side_effect = subprocess.CalledProcessError(7, '')
+        # Create the source directory.
+        with TemporaryDirectory() as source_path:
+            # Create the target directory.
+            with TemporaryDirectory() as target_path:
+                configuration = Configuration('Foo', verbose=True)
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path + '/')
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path)
+
+                result = backup(configuration)
+                self.assertFalse(result)
+
 
 class RestoreTest(TestCase):
     def test_restore_all(self):
@@ -309,5 +326,22 @@ class RestoreTest(TestCase):
                     configuration.logger, configuration.notifier, source_path)
                 configuration.target = PathTarget(
                     configuration.logger, configuration.notifier, target_path + '/NonExistentPath')
+                result = restore(configuration)
+                self.assertFalse(result)
+
+    @patch('backuppy.task.rsync')
+    def test_restore_with_subprocess_error(self, m):
+        m.side_effect = subprocess.CalledProcessError(7, '')
+        # Create the target directory.
+        with TemporaryDirectory() as target_path:
+            # Create the source directory.
+            with TemporaryDirectory() as source_path:
+                configuration = Configuration('Foo', verbose=True)
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path + '/')
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path)
+
                 result = restore(configuration)
                 self.assertFalse(result)
