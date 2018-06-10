@@ -1,6 +1,5 @@
 """Code to run back-ups."""
-from subprocess import CalledProcessError, check_call
-
+import subprocess
 import os
 
 from backuppy.config import Configuration
@@ -34,7 +33,7 @@ def rsync(configuration, origin, destination, path=None):
     else:
         args.append(destination.to_rsync(path))
 
-    check_call(args)
+    subprocess.check_call(args)
 
 
 def backup(configuration, path=None):
@@ -68,7 +67,7 @@ def backup(configuration, path=None):
         rsync(configuration, source, target, path)
         notifier.confirm('Back-up %s complete.' % configuration.name)
         return True
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
         configuration.logger.exception('An rsync error occurred.')
         notifier.confirm('Back-up %s failed.' % configuration.name)
         return False
@@ -103,7 +102,7 @@ def restore(configuration, path=None):
         rsync(configuration, target, source, path)
         notifier.confirm('Restoration of back-up %s complete.' % configuration.name)
         return True
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
         configuration.logger.exception('An rsync error occurred.')
         notifier.alert('Restoration of back-up %s failed.' % configuration.name)
         return False
