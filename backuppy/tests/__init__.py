@@ -2,7 +2,7 @@ import os
 import subprocess
 from tempfile import NamedTemporaryFile
 
-from backuppy.location import SshTarget
+from backuppy.location import SshTarget, SshSource
 
 RESOURCE_PATH = '/'.join(
     (os.path.dirname(os.path.abspath(__file__)), 'resources'))
@@ -97,7 +97,7 @@ class SshLocationContainer(object):
     USERNAME = 'root'
     PASSWORD = 'root'
     IDENTITY = os.path.join(RESOURCE_PATH, 'id_rsa')
-    TARGET_PATH = '/backuppy'
+    PATH = '/backuppy/'
 
     def __init__(self, mount_point=None):
         """Initialize a new instance."""
@@ -117,7 +117,7 @@ class SshLocationContainer(object):
         docker_args = []
         if self._mount_point is not None:
             docker_args += ['-v', '%s:%s' %
-                            (self._mount_point, self.TARGET_PATH)]
+                            (self._mount_point, self.PATH)]
         self.stop()
         subprocess.check_call(['docker', 'run', '-d', '--name',
                                self.NAME] + docker_args + ['backuppy_ssh_location'])
@@ -181,9 +181,16 @@ class SshLocationContainer(object):
         """Wait until the container is ready."""
         subprocess.check_call(['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
 
+    def source(self, configuration):
+        """Get the back-up source to this container.
+
+        :return: backuppy.location.Source
+        """
+        return SshSource(configuration.notifier, self.USERNAME, self.ip, self.PATH, identity=self.IDENTITY, host_keys=self.known_hosts().name)
+
     def target(self, configuration):
         """Get the back-up target to this container.
 
         :return: backuppy.location.Target
         """
-        return SshTarget(configuration.notifier, self.USERNAME, self.ip, self.TARGET_PATH, identity=self.IDENTITY, host_keys=self.known_hosts().name)
+        return SshTarget(configuration.notifier, self.USERNAME, self.ip, self.PATH, identity=self.IDENTITY, host_keys=self.known_hosts().name)

@@ -166,7 +166,7 @@ class AskPolicy(RejectPolicy):
             RejectPolicy.missing_host_key(self, client, hostname, key)
 
 
-class SshTarget(Target, SshOptionsProvider):
+class SshLocation(Location, SshOptionsProvider):
     """Provide a target over SSH."""
 
     def __init__(self, notifier, user, host, path, port=22, identity=None, host_keys=None, interactive=False):
@@ -204,15 +204,6 @@ class SshTarget(Target, SshOptionsProvider):
         except socket.timeout:
             self._notifier.alert('The remote timed out.')
             return False
-
-    def snapshot(self, name):
-        """Create a new snapshot.
-
-        :param name: str
-        """
-        with self._connect() as client:
-            for args in _new_snapshot_args(name):
-                client.exec_command(' '.join(args))
 
     def _connect(self):
         """Connect to the remote.
@@ -267,13 +258,6 @@ class SshTarget(Target, SshOptionsProvider):
         """
         return self._port
 
-    def to_rsync(self):
-        """Build this location's rsync path.
-
-        :return: str
-        """
-        return '%s@%s:%s/latest/' % (self.user, self.host, self._path.rstrip('/'))
-
     def ssh_options(self):
         """Build SSH options.
 
@@ -284,6 +268,37 @@ class SshTarget(Target, SshOptionsProvider):
         options['UserKnownHostsFile'] = self._host_keys
         options['IdentityFile'] = self._identity
         return options
+
+
+class SshSource(Source, SshLocation):
+    """Provide a source over SSH."""
+
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        return '%s@%s:%s/' % (self.user, self.host, self._path.rstrip('/'))
+
+
+class SshTarget(Target, SshLocation):
+    """Provide a target over SSH."""
+
+    def snapshot(self, name):
+        """Create a new snapshot.
+
+        :param name: str
+        """
+        with self._connect() as client:
+            for args in _new_snapshot_args(name):
+                client.exec_command(' '.join(args))
+
+    def to_rsync(self):
+        """Build this location's rsync path.
+
+        :return: str
+        """
+        return '%s@%s:%s/latest/' % (self.user, self.host, self._path.rstrip('/'))
 
 
 class FirstAvailableTarget(Target):
