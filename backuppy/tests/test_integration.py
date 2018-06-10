@@ -1,5 +1,4 @@
 import os
-import subprocess
 from unittest import TestCase
 
 from backuppy.config import Configuration
@@ -64,8 +63,5 @@ class BackupFromSshSourceTest(TestCase):
 
                 result = backup(configuration)
                 self.assertTrue(result)
-                subprocess.call(['ls', '-la', mirrored_local_source_path])
-                subprocess.call(['ls', '-la', target_path])
-                subprocess.call(['ls', '-la', '--dereference-command-line-symlink-to-dir', target_path + '/latest'])
                 assert_paths_identical(self, mirrored_local_source_path, os.path.join(
                     target_path, 'latest'))
