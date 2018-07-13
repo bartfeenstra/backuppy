@@ -12,6 +12,12 @@ def rsync(configuration, origin, destination, path=None):
     """
     args = ['rsync', '-ar', '--numeric-ids', '--relative']
 
+    for pattern in configuration.exclude:
+        args.append("--exclude='%s'" % pattern)
+
+    for pattern in configuration.include:
+        args.append("--include='%s'" % pattern)
+
     ssh_options = configuration.ssh_options()
     if ssh_options:
         ssh_args = []
@@ -28,7 +34,7 @@ def rsync(configuration, origin, destination, path=None):
         path = ''
     args.append('%s./%s' % (origin.to_rsync(), path))
     args.append(destination.to_rsync())
-
+    print(args)
     subprocess.check_call(args)
 
 

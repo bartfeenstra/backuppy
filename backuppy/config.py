@@ -14,18 +14,22 @@ from backuppy.plugin import new_source, new_target, new_notifier
 class Configuration(SshOptionsProvider):
     """Provides back-up configuration."""
 
-    def __init__(self, name, working_directory=None, verbose=False, interactive=False):
+    def __init__(self, name, working_directory=None, verbose=False, interactive=False, exclude=None, include=None):
         """Initialize a new instance.
 
         :param name: str
         :param logger: logging.Logger
         :param working_directory: str
         :param verbose: bool
+        :param exclude: List[str]|None
+        :param include: List[str]|None
         """
         self._name = name
         self._working_directory = working_directory
         self._verbose = verbose
         self._interactive = interactive
+        self._exclude = exclude if exclude else []
+        self._include = include if include else []
         self._source = None
         self._target = None
         self._notifier = None
@@ -46,6 +50,22 @@ class Configuration(SshOptionsProvider):
         :return: bool
         """
         return self._interactive
+
+    @property
+    def exclude(self):
+        """Get the file patterns to exclude.
+
+        :return: List[str]
+        """
+        return self._exclude
+
+    @property
+    def include(self):
+        """Get the file patterns to include.
+
+        :return: List[str]
+        """
+        return self._include
 
     @verbose.setter
     def verbose(self, verbose):
@@ -188,8 +208,11 @@ def from_configuration_data(configuration_file_path, data, verbose=None, interac
                 raise ValueError('`interactive` must be a boolean.')
             interactive = data['interactive']
 
+    exclude = data['exclude'] if 'exclude' in data else []
+    include = data['include'] if 'include' in data else []
+
     configuration = Configuration(
-        name, working_directory, verbose, interactive)
+        name, working_directory, verbose, interactive, exclude=exclude, include=include)
 
     if 'logging' in data:
         logging_config.dictConfig(data['logging'])

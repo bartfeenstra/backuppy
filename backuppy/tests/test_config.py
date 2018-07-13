@@ -22,6 +22,16 @@ class ConfigurationTest(TestCase):
         sut.verbose = False
         self.assertFalse(sut.verbose)
 
+    def test_exclude(self):
+        exclude = ['foo', 'qux', './BAZ/*']
+        sut = Configuration('Foo', exclude=exclude)
+        self.assertEquals(exclude, sut.exclude)
+
+    def test_include(self):
+        include = ['foo', 'qux', './BAZ/*']
+        sut = Configuration('Foo', include=include)
+        self.assertEquals(include, sut.include)
+
     def test_working_directory(self):
         sut = Configuration('Foo', working_directory=CONFIGURATION_PATH)
         self.assertEquals(sut.working_directory, CONFIGURATION_PATH)
