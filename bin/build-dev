@@ -18,8 +18,13 @@ chmod ugo+rx ./vendor/bin/*
 
 # Build the SSH location container used for testing.
 CONTAINER_NAME=backuppy_ssh_location
-docker image rm $CONTAINER_NAME || true
-docker build -t $CONTAINER_NAME ./backuppy/tests/resources/container
+docker image rm -f "$CONTAINER_NAME" || true
+docker build -t "$CONTAINER_NAME" ./backuppy/tests/resources/container
 
-pip install "$@"
+if [ "$#" -eq 0 ]; then
+    pip_args='-e .'
+else
+    pip_args="$*"
+fi
+eval "pip install $pip_args"
 pip install -r requirements-dev.txt
