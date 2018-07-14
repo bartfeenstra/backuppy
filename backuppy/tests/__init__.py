@@ -179,7 +179,7 @@ class SshLocationContainer(object):
 
     def await(self):
         """Wait until the container is ready."""
-        subprocess.check_call(['./bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
+        subprocess.check_call(['./vendor/bin/wait-for-it', '%s:%d' % (self.ip, self.PORT)])
 
     def source(self, configuration):
         """Get the back-up source to this container.

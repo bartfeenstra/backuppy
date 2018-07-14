@@ -13,6 +13,7 @@ addons:
     apt:
         packages:
             - libnotify-bin
+            - shellcheck
             - sshpass
 
 cache: pip
