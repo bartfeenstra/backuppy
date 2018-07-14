@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+cd "$(dirname "$0")/.."
+
+failures=false
+while read -r file; do
+    if ! shellcheck -x "$file"; then
+        failures=true
+    fi
+done < <(find ./bin 2>/dev/null | grep '^\./bin/' | grep -v '^\./bin/backuppy$')
+
+if $failures; then
+    exit 1
+fi

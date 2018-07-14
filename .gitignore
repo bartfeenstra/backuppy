@@ -7,4 +7,4 @@
 *.pyc
 
 ### Third-party files.
-/bin/wait-for-it
+/vendor

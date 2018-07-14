@@ -1,24 +1,35 @@
 #!/usr/bin/env bash
 
-cd `dirname "$0"`/..
+set -Eeuo pipefail
 
-# Aggregate test exit codes.
-exit_code=0
-trap '(( exit_code |= $? ))' ERR
+cd "$(dirname "$0")/.."
 
-flake8 --ignore=E501 ./backuppy
-pydocstyle
-./bin/build-docs
-coverage run -m nose2
-coverage report -m
+function message {
+    message=$1
+    echo ""
+    echo "$message"
+    echo ""
+}
 
-# Stop aggregating test exit codes.
-trap - ERR
+# Aggregate test results.
+total=0
+failures=0
+for test in ./tests/*; do
+    total=$((total + 1))
+    message "Running test $test..."
+    if $test; then
+        echo "TEST $test PASSED"
+     else
+        failures=$((failures + 1))
+        echo "TEST $test FAILED"
+    fi
+done
 
-if [ $exit_code -eq 0 ]
+if [ $failures -eq 0 ]
 then
-    echo "SUCCESS: ALL TESTS PASSED."
+    message "SUCCESS: $total TEST(S) PASSED."
+    exit
 else
-    echo "ERROR: SOME TESTS FAILED."
+    message "ERROR: $failures OUT OF $total TEST(S) FAILED."
+    exit 1
 fi
-exit $exit_code

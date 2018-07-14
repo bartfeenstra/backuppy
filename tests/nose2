@@ -3,4 +3,7 @@
 set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
-sphinx-build -b html ./docs ./docs-build
+
+
+coverage run -m nose2
+coverage report -m

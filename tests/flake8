@@ -3,4 +3,6 @@
 set -Eeuo pipefail
 
 cd "$(dirname "$0")/.."
-sphinx-build -b html ./docs ./docs-build
+
+flake8 --ignore=E501 ./backuppy
+
