@@ -216,6 +216,45 @@ class BackupTest(TestCase):
                 result = backup(configuration)
                 self.assertFalse(result)
 
+    def test_backup_with_exclude_include(self):
+        exclude = ['./excluded', './contents.excluded/*']
+        include = ['./contents.excluded/some.explicitly.included.file.in.explicitly.contents.excluded.subdirectory']
+        # Create the source directory.
+        with TemporaryDirectory() as source_path:
+            with open(os.path.join(source_path, 'some.implicitly.included.file'), mode='w+t') as f:
+                f.write('This is just some implicitly included file...')
+                f.flush()
+            os.makedirs(os.path.join(source_path, 'excluded'))
+            with open(os.path.join(source_path, 'excluded', 'some.implicitly.excluded.file.in.explicitly.excluded.subdirectory'), mode='w+t') as f:
+                f.write('This is just some implicitly excluded file in an explicitly excluded subdirectory...')
+                f.flush()
+            os.makedirs(os.path.join(source_path, 'included'))
+            with open(os.path.join(source_path, 'included', 'some.implicitly.included.file.in.implicitly.included.subdirectory'), mode='w+t') as f:
+                f.write('This is just some implicitly excluded file in an explicitly excluded subdirectory...')
+                f.flush()
+            os.makedirs(os.path.join(source_path, 'contents.excluded'))
+            with open(os.path.join(source_path, 'contents.excluded', 'some.implicitly.excluded.file.in.explicitly.contents.excluded.subdirectory'), mode='w+t') as f:
+                f.write('This is just some implicitly excluded file in an explicitly contents-excluded subdirectory...')
+                f.flush()
+            with open(os.path.join(source_path, 'contents.excluded', 'some.explicitly.included.file.in.explicitly.contents.excluded.subdirectory'), mode='w+t') as f:
+                f.write('This is just some explicitly included file in an explicitly contents-excluded subdirectory...')
+                f.flush()
+
+            # Create the target directory.
+            with TemporaryDirectory() as target_path:
+                configuration = Configuration('Foo', exclude=exclude, include=include)
+                configuration.notifier = Mock(Notifier)
+                configuration.source = PathSource(
+                    configuration.logger, configuration.notifier, source_path + '/')
+                configuration.target = PathTarget(
+                    configuration.logger, configuration.notifier, target_path)
+
+                # Back up the first time.
+                result = backup(configuration)
+                self.assertTrue(result)
+                with self.assertRaises(AssertionError):
+                    assert_paths_identical(self, source_path, os.path.join(target_path, 'latest'))
+
 
 class RestoreTest(TestCase):
     def test_restore_all(self):

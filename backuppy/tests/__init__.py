@@ -69,6 +69,11 @@ def assert_path_appears(test, source_path, target_path):
             for child_file_name in child_file_names:
                 with open(os.path.join(target_dir_path, child_file_name)) as target_f:
                     with open(os.path.join(source_dir_path, child_file_name)) as source_f:
+                        # print('YAMAN')
+                        # print('YAMAN')
+                        # print('YAMAN')
+                        # print(os.path.join(source_dir_path, child_file_name))
+                        # print(os.path.join(target_dir_path, child_file_name))
                         assert_file(test, source_f, target_f)
     except Exception:
         raise AssertionError(
